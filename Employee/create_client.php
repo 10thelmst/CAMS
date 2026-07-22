@@ -1,5 +1,5 @@
 <?php
-// create_client.php
+// C:\xampp\htdocs\cams\Employee\create_client.php
 require_once __DIR__ . '/../auth/auth_check.php'; // Include auth check & DB connection
 
 $message = '';
@@ -7,7 +7,6 @@ $message_type = '';
 
 // Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_client_case') {
-    // ... rest of your code ...
     try {
         $pdo->beginTransaction();
 
@@ -111,9 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 <body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
 
-  <!-- Content Wrapper -->
   <div class="content-wrapper ml-0">
-    <!-- Content Header -->
     <section class="content-header">
       <div class="container-fluid">
         <div class="row mb-2">
@@ -130,7 +127,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
       </div>
     </section>
 
-    <!-- Main Content -->
     <section class="content">
       <div class="container-fluid">
 
@@ -162,7 +158,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
               </div>
             </div>
 
-            <!-- Search Results Container -->
             <div id="search_results" class="mt-3" style="display: none;">
               <h5 class="text-secondary"><i class="fas fa-list mr-1"></i> Matching Records Found:</h5>
               <div class="table-responsive">
@@ -261,13 +256,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 </div>
                 <div class="col-md-3 form-group">
                   <label>Town / City <span class="text-danger">*</span></label>
-                  <select name="city_code" id="city_code" class="form-control" required disabled>
+                  <select name="city_code" id="city_code" class="form-control"  disabled>
                     <option value="">-- Select Town/City --</option>
                   </select>
                 </div>
                 <div class="col-md-3 form-group">
                   <label>Barangay <span class="text-danger">*</span></label>
-                  <select name="barangay_code" id="barangay_code" class="form-control" required disabled>
+                  <select name="barangay_code" id="barangay_code" class="form-control"  disabled>
                     <option value="">-- Select Barangay --</option>
                   </select>
                 </div>
@@ -383,14 +378,98 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 </div>
 
 <!-- JS Dependencies -->
-<script href="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<script href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-<script href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const regionSelect = document.getElementById('region_code');
+    const provinceSelect = document.getElementById('province_code');
+    const citySelect = document.getElementById('city_code');
+    const barangaySelect = document.getElementById('barangay_code');
+
+    // Region V (Bicol Region) PSGC Code
+    const DEFAULT_REGION_CODE = '050000000';
+
+    // 1. Fetch Regions & Set Default
+    fetch('../auth/ajax_address_json.php?action=get_regions')
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                console.error(data.error);
+                return;
+            }
+            regionSelect.innerHTML = '<option value="">-- Select Region --</option>';
+            data.forEach(r => {
+                const selected = (r.code === DEFAULT_REGION_CODE) ? 'selected' : '';
+                regionSelect.innerHTML += `<option value="${r.code}" ${selected}>${r.name}</option>`;
+            });
+
+            // Trigger change event automatically if Region V is selected
+            if (regionSelect.value) {
+                regionSelect.dispatchEvent(new Event('change'));
+            }
+        });
+
+    // 2. Region -> Province
+    regionSelect.addEventListener('change', function () {
+        provinceSelect.innerHTML = '<option value="">-- Select Province --</option>';
+        citySelect.innerHTML = '<option value="">-- Select Town/City (Optional) --</option>';
+        barangaySelect.innerHTML = '<option value="">-- Select Barangay (Optional) --</option>';
+        
+        provinceSelect.disabled = !this.value;
+        citySelect.disabled = true;
+        barangaySelect.disabled = true;
+
+        if (this.value) {
+            fetch(`../auth/ajax_address_json.php?action=get_provinces&region_code=${this.value}`)
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(p => {
+                        provinceSelect.innerHTML += `<option value="${p.code}">${p.name}</option>`;
+                    });
+                });
+        }
+    });
+
+    // 3. Province -> City
+    provinceSelect.addEventListener('change', function () {
+        citySelect.innerHTML = '<option value="">-- Select Town/City (Optional) --</option>';
+        barangaySelect.innerHTML = '<option value="">-- Select Barangay (Optional) --</option>';
+        
+        citySelect.disabled = !this.value;
+        barangaySelect.disabled = true;
+
+        if (this.value) {
+            fetch(`../auth/ajax_address_json.php?action=get_cities&province_code=${this.value}`)
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(c => {
+                        citySelect.innerHTML += `<option value="${c.code}">${c.name}</option>`;
+                    });
+                });
+        }
+    });
+
+    // 4. City -> Barangay
+    citySelect.addEventListener('change', function () {
+        barangaySelect.innerHTML = '<option value="">-- Select Barangay (Optional) --</option>';
+        barangaySelect.disabled = !this.value;
+
+        if (this.value) {
+            fetch(`../auth/ajax_address_json.php?action=get_barangays&city_code=${this.value}`)
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(b => {
+                        barangaySelect.innerHTML += `<option value="${b.code}">${b.name}</option>`;
+                    });
+                });
+        }
+    });
+});
     // -------------------------------------------------------------
-    // 1. OFW Toggle Logic
+    // 2. OFW Toggle Logic
     // -------------------------------------------------------------
     const isOfwCheckbox = document.getElementById('is_ofw');
     const ofwNameWrapper = document.getElementById('ofw_name_wrapper');
@@ -415,79 +494,6 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleOfwFields();
 
     // -------------------------------------------------------------
-    // 2. PSGC Address Cascade (JSON driven)
-    // -------------------------------------------------------------
-    const regionSelect = document.getElementById('region_code');
-    const provinceSelect = document.getElementById('province_code');
-    const citySelect = document.getElementById('city_code');
-    const barangaySelect = document.getElementById('barangay_code');
-
-    // Fetch Regions
-    fetch('ajax_address_json.php?action=get_regions')
-        .then(res => res.json())
-        .then(data => {
-            data.forEach(r => {
-                regionSelect.innerHTML += `<option value="${r.code}">${r.name}</option>`;
-            });
-        }).catch(err => console.error("Error loading regions:", err));
-
-    // Region -> Province
-    regionSelect.addEventListener('change', function () {
-        provinceSelect.innerHTML = '<option value="">-- Select Province --</option>';
-        citySelect.innerHTML = '<option value="">-- Select Town/City --</option>';
-        barangaySelect.innerHTML = '<option value="">-- Select Barangay --</option>';
-        
-        provinceSelect.disabled = !this.value;
-        citySelect.disabled = true;
-        barangaySelect.disabled = true;
-
-        if (this.value) {
-            fetch(`ajax_address_json.php?action=get_provinces&region_code=${this.value}`)
-                .then(res => res.json())
-                .then(data => {
-                    data.forEach(p => {
-                        provinceSelect.innerHTML += `<option value="${p.code}">${p.name}</option>`;
-                    });
-                });
-        }
-    });
-
-    // Province -> City
-    provinceSelect.addEventListener('change', function () {
-        citySelect.innerHTML = '<option value="">-- Select Town/City --</option>';
-        barangaySelect.innerHTML = '<option value="">-- Select Barangay --</option>';
-        
-        citySelect.disabled = !this.value;
-        barangaySelect.disabled = true;
-
-        if (this.value) {
-            fetch(`ajax_address_json.php?action=get_cities&region_code=${regionSelect.value}&province_code=${this.value}`)
-                .then(res => res.json())
-                .then(data => {
-                    data.forEach(c => {
-                        citySelect.innerHTML += `<option value="${c.code}">${c.name}</option>`;
-                    });
-                });
-        }
-    });
-
-    // City -> Barangay
-    citySelect.addEventListener('change', function () {
-        barangaySelect.innerHTML = '<option value="">-- Select Barangay --</option>';
-        barangaySelect.disabled = !this.value;
-
-        if (this.value) {
-            fetch(`ajax_address_json.php?action=get_barangays&region_code=${regionSelect.value}&province_code=${provinceSelect.value}&city_code=${this.value}`)
-                .then(res => res.json())
-                .then(data => {
-                    data.forEach(b => {
-                        barangaySelect.innerHTML += `<option value="${b.code}">${b.name}</option>`;
-                    });
-                });
-        }
-    });
-
-    // -------------------------------------------------------------
     // 3. Duplicate Search Engine
     // -------------------------------------------------------------
     const btnSearch = document.getElementById('btn_search');
@@ -502,7 +508,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        fetch(`ajax_search_client.php?term=${encodeURIComponent(term)}`)
+        fetch(`../auth/ajax_search_client.php?term=${encodeURIComponent(term)}`)
             .then(res => res.json())
             .then(data => {
                 searchResultsBody.innerHTML = '';
