@@ -28,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 trim($_POST['address1']),
                 $_POST['region_code'] ?? null,
                 $_POST['province_code'] ?? null,
-                $_POST['city_code'] ?? null,
-                $_POST['barangay_code'] ?? null
+                !empty($_POST['city_code']) ? $_POST['city_code'] : null,
+                !empty($_POST['barangay_code']) ? $_POST['barangay_code'] : null
             ]);
             $client_id = $pdo->lastInsertId();
         }
@@ -242,30 +242,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 </div>
               </div>
               <div class="row">
-                <div class="col-md-3 form-group">
-                  <label>Region <span class="text-danger">*</span></label>
-                  <select name="region_code" id="region_code" class="form-control" required>
-                    <option value="">-- Select Region --</option>
-                  </select>
-                </div>
-                <div class="col-md-3 form-group">
-                  <label>Province <span class="text-danger">*</span></label>
-                  <select name="province_code" id="province_code" class="form-control" required disabled>
-                    <option value="">-- Select Province --</option>
-                  </select>
-                </div>
-                <div class="col-md-3 form-group">
-                  <label>Town / City <span class="text-danger">*</span></label>
-                  <select name="city_code" id="city_code" class="form-control"  disabled>
-                    <option value="">-- Select Town/City --</option>
-                  </select>
-                </div>
-                <div class="col-md-3 form-group">
-                  <label>Barangay <span class="text-danger">*</span></label>
-                  <select name="barangay_code" id="barangay_code" class="form-control"  disabled>
-                    <option value="">-- Select Barangay --</option>
-                  </select>
-                </div>
+                <!-- Region Dropdown (Locked to Region V) -->
+<div class="col-md-3 form-group">
+  <label>Region <span class="text-danger">*</span></label>
+  <select name="region_code" id="region_code" class="form-control bg-light" required readonly style="pointer-events: none;">
+    <option value="05" selected>Region V (Bicol Region)</option>
+  </select>
+</div>
+
+<!-- Province Dropdown (Required) -->
+<div class="col-md-3 form-group">
+  <label>Province <span class="text-danger">*</span></label>
+  <select name="province_code" id="province_code" class="form-control" required disabled>
+    <option value="">-- Select Province --</option>
+  </select>
+</div>
+
+<!-- Town / City Dropdown (Optional) -->
+<div class="col-md-3 form-group">
+  <label>Town / City <small class="text-muted">(Optional)</small></label>
+  <select name="city_code" id="city_code" class="form-control" disabled>
+    <option value="">-- Select Town/City --</option>
+  </select>
+</div>
+
+<!-- Barangay Dropdown (Optional) -->
+<div class="col-md-3 form-group">
+  <label>Barangay <small class="text-muted">(Optional)</small></label>
+  <select name="barangay_code" id="barangay_code" class="form-control" disabled>
+    <option value="">-- Select Barangay --</option>
+  </select>
+</div>
               </div>
             </div>
           </div>
@@ -390,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const barangaySelect = document.getElementById('barangay_code');
 
     // Region V (Bicol Region) PSGC Code
-    const DEFAULT_REGION_CODE = '050000000';
+    const DEFAULT_REGION_CODE = '05';
 
     // 1. Fetch Regions & Set Default
     fetch('../auth/ajax_address_json.php?action=get_regions')
@@ -467,9 +474,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
         }
     });
-});
+
     // -------------------------------------------------------------
-    // 2. OFW Toggle Logic
+    // 5. OFW Toggle Logic
     // -------------------------------------------------------------
     const isOfwCheckbox = document.getElementById('is_ofw');
     const ofwNameWrapper = document.getElementById('ofw_name_wrapper');
@@ -494,7 +501,7 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleOfwFields();
 
     // -------------------------------------------------------------
-    // 3. Duplicate Search Engine
+    // 6. Duplicate Search Engine
     // -------------------------------------------------------------
     const btnSearch = document.getElementById('btn_search');
     const searchTerm = document.getElementById('search_term');
