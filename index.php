@@ -3,7 +3,24 @@ session_start();
 
 // Check if user is already logged in
 if (isset($_SESSION['user_id'])) {
-    header('Location: dashboard.php');
+    // Redirect based on role
+    if (isset($_SESSION['role'])) {
+        switch ($_SESSION['role']) {
+            case 'admin':
+                header('Location: admin/dashboard.php');
+                break;
+            case 'superadmin':
+                header('Location: Superadmin/dashboard.php');
+                break;
+            case 'employee':
+                header('Location: Employee/dashboard.php');
+                break;
+            default:
+                header('Location: index.php');
+        }
+    } else {
+        header('Location: index.php');
+    }
     exit();
 }
 
@@ -17,8 +34,9 @@ $error_message = '';
 $success_message = '';
 
 // Handle authentication status messages
-if (isset($_GET['logged_out'])) {
-    $success_message = 'You have been successfully logged out.';
+if (isset($_SESSION['logout_message'])) {
+    $success_message = $_SESSION['logout_message'];
+    unset($_SESSION['logout_message']);
 }
 if (isset($_GET['timeout'])) {
     $error_message = 'Your session has expired due to inactivity. Please log in again.';
@@ -36,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error_message = 'Please fill in all fields.';
     } else {
         // Prepare statement to prevent SQL injection
-        $stmt = $conn->prepare("SELECT id, username, email, password, role FROM users WHERE email = ? OR username = ?");
+        $stmt = $conn->prepare("SELECT id, username, email, password, role, password_change_required FROM users WHERE email = ? OR username = ?");
         $stmt->bind_param("ss", $email, $email);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -69,21 +87,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_SESSION['roles'] = $user_roles;
                 $_SESSION['role'] = $user_roles[0]; // Primary role for backward compatibility
                 
-                // Redirect based on primary role (first role in array)
-                $primary_role = $user_roles[0];
-                switch ($primary_role) {
-                    case 'admin':
-                        header('Location: admin/dashboard.php');
-                        break;
-                    case 'superadmin':
-                        header('Location: Superadmin/dashboard.php');
-                        break;
-                    case 'employee':
-                        header('Location: Employee/dashboard.php');
-                        break;
-                    default:
-                        $error_message = 'Invalid user role. Please contact administrator.';
+                // Check if user needs to change password
+                if (isset($user['password_change_required']) && $user['password_change_required'] == 1) {
+                    header('Location: change_password.php');
+                    exit();
                 }
+                
+                // Redirect to index.php
+                header('Location: index.php');
                 exit();
             } else {
                 $error_message = 'Invalid email or password.';
@@ -91,26 +102,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else {
             // User not found in CAMS, check OWWA database
             $owwa_conn = get_owwa_connection();
-            $owwa_stmt = $owwa_conn->prepare("SELECT code_name, email, fullname FROM dtr_employeescopy WHERE code_name = ? OR email = ?");
-            $owwa_stmt->bind_param("ss", $email, $email);
+            
+            // Try to get user from OWWA database - handle different column structures
+            $owwa_query = "SELECT code_name FROM dtr_employeescopy WHERE code_name = ?";
+            $owwa_stmt = $owwa_conn->prepare($owwa_query);
+            $owwa_stmt->bind_param("s", $email);
             $owwa_stmt->execute();
             $owwa_result = $owwa_stmt->get_result();
             
             if ($owwa_result->num_rows > 0) {
                 $owwa_user = $owwa_result->fetch_assoc();
                 $username = trim($owwa_user['code_name']);
-                $owwa_email = trim($owwa_user['email']);
-                $fullname = trim($owwa_user['fullname']);
                 
-                // Use email as username if code_name is empty
-                if (empty($username)) {
-                    $username = $owwa_email;
-                }
-                
-                // Generate email if not available
-                if (empty($owwa_email)) {
-                    $owwa_email = $username . '@owwa.gov.ph';
-                }
+                // Generate email from username
+                $owwa_email = $username . '@owwa.gov.ph';
+                $fullname = $username;
                 
                 // Check if password matches default password for first-time login
                 if ($password === 'password123') {
@@ -118,9 +124,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
                     $default_role = 'employee';
                     $default_status = 'active';
+                    $password_change_required = 1;
                     
-                    $import_stmt = $conn->prepare("INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, ?, ?)");
-                    $import_stmt->bind_param("sssss", $username, $owwa_email, $hashed_password, $default_role, $default_status);
+                    $import_stmt = $conn->prepare("INSERT INTO users (username, email, password, role, status, password_change_required) VALUES (?, ?, ?, ?, ?, ?)");
+                    $import_stmt->bind_param("sssssi", $username, $owwa_email, $hashed_password, $default_role, $default_status, $password_change_required);
                     
                     if ($import_stmt->execute()) {
                         $user_id = $conn->insert_id;
@@ -142,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $_SESSION['roles'] = array($default_role);
                         $_SESSION['role'] = $default_role;
                         
-                        header('Location: Employee/dashboard.php');
+                        header('Location: index.php');
                         exit();
                     } else {
                         $error_message = 'Error importing user: ' . $conn->error;

@@ -11,34 +11,20 @@ $error_count = 0;
 $errors = array();
 
 // Fetch users from OWWA database
-$owwa_query = "SELECT code_name, email, fullname FROM dtr_employeescopy WHERE code_name IS NOT NULL AND code_name != ''";
+$owwa_query = "SELECT code_name FROM dtr_employeescopy WHERE code_name IS NOT NULL AND code_name != ''";
 $owwa_result = $owwa_conn->query($owwa_query);
 
 if ($owwa_result) {
     while ($owwa_user = $owwa_result->fetch_assoc()) {
         $username = trim($owwa_user['code_name']);
-        $email = trim($owwa_user['email']);
-        $fullname = trim($owwa_user['fullname']);
         
         // Skip if username is empty
         if (empty($username)) {
             continue;
         }
         
-        // Use email as username if username is not available
-        if (empty($username) && !empty($email)) {
-            $username = $email;
-        }
-        
-        // Generate email if not available (use username@owwa.gov.ph as fallback)
-        if (empty($email)) {
-            $email = $username . '@owwa.gov.ph';
-        }
-        
-        // Use fullname as username if username is not available
-        if (empty($username) && !empty($fullname)) {
-            $username = strtolower(str_replace(' ', '.', $fullname));
-        }
+        // Generate email from username
+        $email = $username . '@owwa.gov.ph';
         
         // Check if user already exists in CAMS
         $check_stmt = $cams_conn->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
@@ -69,10 +55,11 @@ if ($owwa_result) {
             $hashed_password = password_hash($default_password, PASSWORD_DEFAULT);
             $default_role = 'employee';
             $default_status = 'active';
+            $password_change_required = 1;
             
             // Insert new user
-            $insert_stmt = $cams_conn->prepare("INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, ?, ?)");
-            $insert_stmt->bind_param("sssss", $username, $email, $hashed_password, $default_role, $default_status);
+            $insert_stmt = $cams_conn->prepare("INSERT INTO users (username, email, password, role, status, password_change_required) VALUES (?, ?, ?, ?, ?, ?)");
+            $insert_stmt->bind_param("sssssi", $username, $email, $hashed_password, $default_role, $default_status, $password_change_required);
             
             if ($insert_stmt->execute()) {
                 $user_id = $cams_conn->insert_id;

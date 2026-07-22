@@ -71,7 +71,7 @@ $content .= '
         <div class="card-header">
             <h3 class="card-title">All Users</h3>
             <div class="card-tools">
-                <a href="../setup/import_owwa_users.php" class="btn btn-info btn-sm" onclick="return confirm('This will import users from OWWA database. Continue?');">
+                <a href="../setup/import_owwa_users.php" class="btn btn-info btn-sm" onclick="return confirm(\'This will import users from OWWA database. Continue?\');">
                     <i class="fas fa-sync"></i> Import from OWWA
                 </a>
                 <a href="create_user.php" class="btn btn-success btn-sm">

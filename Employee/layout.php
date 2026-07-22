@@ -98,6 +98,24 @@ $user_info = get_user_info();
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="bio_data.php" class="nav-link <?php echo $active_page == 'bio_data' ? 'active' : ''; ?>">
+                            <i class="nav-icon fas fa-id-card"></i>
+                            <p>Bio-Data</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="create_client.php" class="nav-link <?php echo $active_page == 'create_client' ? 'active' : ''; ?>">
+                            <i class="nav-icon fas fa-user-plus"></i>
+                            <p>Create Client</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="manage_case.php" class="nav-link <?php echo $active_page == 'manage_case' ? 'active' : ''; ?>">
+                            <i class="nav-icon fas fa-folder-open"></i>
+                            <p>Manage Case</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="../auth/logout.php" class="nav-link">
                             <i class="nav-icon fas fa-sign-out-alt"></i>
                             <p>Logout</p>
