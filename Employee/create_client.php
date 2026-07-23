@@ -1,6 +1,7 @@
 <?php
 // C:\xampp\htdocs\cams\Employee\create_client.php
-require_once __DIR__ . '/../auth/auth_check.php'; // Include auth check & DB connection
+require_once __DIR__ . '/../auth/auth_check.php'; // Session & Auth Guard
+require_once __DIR__ . '/../config/database.php'; // Database Connection ($pdo)
 
 $message = '';
 $message_type = '';
@@ -26,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 !empty($_POST['dob']) ? $_POST['dob'] : null,
                 isset($_POST['is_ofw']) ? 1 : 0,
                 trim($_POST['address1']),
-                $_POST['region_code'] ?? null,
+                $_POST['region_code'] ?? '05',
                 $_POST['province_code'] ?? null,
                 !empty($_POST['city_code']) ? $_POST['city_code'] : null,
                 !empty($_POST['barangay_code']) ? $_POST['barangay_code'] : null
@@ -188,7 +189,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
           <div class="card card-outline card-primary">
             <div class="card-header d-flex align-items-center">
               <h3 class="card-title"><i class="fas fa-id-card mr-2"></i>Step 2: Client Personal Details</h3>
-              <span id="selected_client_badge" class="badge badge-success ml-auto p-2" style="display: none;">Existing Client Selected</span>
+              <div class="ml-auto">
+                <span id="selected_client_badge" class="badge badge-success p-2 mr-2" style="display: none;">Existing Client Selected</span>
+                <button type="button" id="btn_reset_client" class="btn btn-xs btn-outline-danger" style="display: none;"><i class="fas fa-times"></i> Change Client</button>
+              </div>
             </div>
             <div class="card-body">
               <div class="row">
@@ -243,36 +247,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
               </div>
               <div class="row">
                 <!-- Region Dropdown (Locked to Region V) -->
-<div class="col-md-3 form-group">
-  <label>Region <span class="text-danger">*</span></label>
-  <select name="region_code" id="region_code" class="form-control bg-light" required readonly style="pointer-events: none;">
-    <option value="05" selected>Region V (Bicol Region)</option>
-  </select>
-</div>
+                <div class="col-md-3 form-group">
+                  <label>Region <span class="text-danger">*</span></label>
+                  <input type="hidden" name="region_code" value="05">
+                  <select id="region_code_display" class="form-control bg-light" disabled>
+                    <option value="05" selected>Region V (Bicol Region)</option>
+                  </select>
+                </div>
 
-<!-- Province Dropdown (Required) -->
-<div class="col-md-3 form-group">
-  <label>Province <span class="text-danger">*</span></label>
-  <select name="province_code" id="province_code" class="form-control" required disabled>
-    <option value="">-- Select Province --</option>
-  </select>
-</div>
+                <!-- Province Dropdown (Required) -->
+                <div class="col-md-3 form-group">
+                  <label>Province <span class="text-danger">*</span></label>
+                  <select name="province_code" id="province_code" class="form-control" required disabled>
+                    <option value="">-- Select Province --</option>
+                  </select>
+                </div>
 
-<!-- Town / City Dropdown (Optional) -->
-<div class="col-md-3 form-group">
-  <label>Town / City <small class="text-muted">(Optional)</small></label>
-  <select name="city_code" id="city_code" class="form-control" disabled>
-    <option value="">-- Select Town/City --</option>
-  </select>
-</div>
+                <!-- Town / City Dropdown (Optional) -->
+                <div class="col-md-3 form-group">
+                  <label>Town / City <small class="text-muted">(Optional)</small></label>
+                  <select name="city_code" id="city_code" class="form-control" disabled>
+                    <option value="">-- Select Town/City --</option>
+                  </select>
+                </div>
 
-<!-- Barangay Dropdown (Optional) -->
-<div class="col-md-3 form-group">
-  <label>Barangay <small class="text-muted">(Optional)</small></label>
-  <select name="barangay_code" id="barangay_code" class="form-control" disabled>
-    <option value="">-- Select Barangay --</option>
-  </select>
-</div>
+                <!-- Barangay Dropdown (Optional) -->
+                <div class="col-md-3 form-group">
+                  <label>Barangay <small class="text-muted">(Optional)</small></label>
+                  <select name="barangay_code" id="barangay_code" class="form-control" disabled>
+                    <option value="">-- Select Barangay --</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -373,7 +378,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
               </div>
             </div>
             <div class="card-footer bg-white text-right">
-              <button type="reset" class="btn btn-default mr-2"><i class="fas fa-undo"></i> Reset Form</button>
+              <button type="reset" class="btn btn-default mr-2" id="btn_reset_form"><i class="fas fa-undo"></i> Reset Form</button>
               <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save mr-1"></i> Submit Case Record</button>
             </div>
           </div>
@@ -391,56 +396,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const regionSelect = document.getElementById('region_code');
     const provinceSelect = document.getElementById('province_code');
     const citySelect = document.getElementById('city_code');
     const barangaySelect = document.getElementById('barangay_code');
 
-    // Region V (Bicol Region) PSGC Code
     const DEFAULT_REGION_CODE = '05';
 
-    // 1. Fetch Regions & Set Default
-    fetch('../auth/ajax_address_json.php?action=get_regions')
-        .then(res => res.json())
-        .then(data => {
-            if (data.error) {
-                console.error(data.error);
-                return;
-            }
-            regionSelect.innerHTML = '<option value="">-- Select Region --</option>';
-            data.forEach(r => {
-                const selected = (r.code === DEFAULT_REGION_CODE) ? 'selected' : '';
-                regionSelect.innerHTML += `<option value="${r.code}" ${selected}>${r.name}</option>`;
-            });
+    // Helper: Escapes HTML strings to prevent attribute/syntax breaking
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 
-            // Trigger change event automatically if Region V is selected
-            if (regionSelect.value) {
-                regionSelect.dispatchEvent(new Event('change'));
-            }
-        });
-
-    // 2. Region -> Province
-    regionSelect.addEventListener('change', function () {
-        provinceSelect.innerHTML = '<option value="">-- Select Province --</option>';
-        citySelect.innerHTML = '<option value="">-- Select Town/City (Optional) --</option>';
-        barangaySelect.innerHTML = '<option value="">-- Select Barangay (Optional) --</option>';
-        
-        provinceSelect.disabled = !this.value;
-        citySelect.disabled = true;
-        barangaySelect.disabled = true;
-
-        if (this.value) {
-            fetch(`../auth/ajax_address_json.php?action=get_provinces&region_code=${this.value}`)
-                .then(res => res.json())
-                .then(data => {
-                    data.forEach(p => {
-                        provinceSelect.innerHTML += `<option value="${p.code}">${p.name}</option>`;
-                    });
+    // 1. Auto-load Region V Provinces on Page Load
+    function loadProvincesForRegionV() {
+        fetch(`../auth/ajax_address_json.php?action=get_provinces&region_code=${DEFAULT_REGION_CODE}`)
+            .then(res => res.json())
+            .then(data => {
+                provinceSelect.innerHTML = '<option value="">-- Select Province --</option>';
+                data.forEach(p => {
+                    provinceSelect.innerHTML += `<option value="${p.code}">${p.name}</option>`;
                 });
-        }
-    });
+                provinceSelect.disabled = false;
+            })
+            .catch(err => console.error('Error fetching provinces:', err));
+    }
+    loadProvincesForRegionV();
 
-    // 3. Province -> City
+    // 2. Province -> City
     provinceSelect.addEventListener('change', function () {
         citySelect.innerHTML = '<option value="">-- Select Town/City (Optional) --</option>';
         barangaySelect.innerHTML = '<option value="">-- Select Barangay (Optional) --</option>';
@@ -459,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // 4. City -> Barangay
+    // 3. City -> Barangay
     citySelect.addEventListener('change', function () {
         barangaySelect.innerHTML = '<option value="">-- Select Barangay (Optional) --</option>';
         barangaySelect.disabled = !this.value;
@@ -475,9 +463,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // -------------------------------------------------------------
-    // 5. OFW Toggle Logic
-    // -------------------------------------------------------------
+    // 4. OFW Toggle Logic
     const isOfwCheckbox = document.getElementById('is_ofw');
     const ofwNameWrapper = document.getElementById('ofw_name_wrapper');
     const relationshipWrapper = document.getElementById('relationship_wrapper');
@@ -500,9 +486,7 @@ document.addEventListener('DOMContentLoaded', function () {
     isOfwCheckbox.addEventListener('change', toggleOfwFields);
     toggleOfwFields();
 
-    // -------------------------------------------------------------
-    // 6. Duplicate Search Engine
-    // -------------------------------------------------------------
+    // 5. Duplicate Search Engine
     const btnSearch = document.getElementById('btn_search');
     const searchTerm = document.getElementById('search_term');
     const searchResults = document.getElementById('search_results');
@@ -515,37 +499,50 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        searchResultsBody.innerHTML = '<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> Searching...</td></tr>';
+        searchResults.style.display = 'block';
+
         fetch(`../auth/ajax_search_client.php?term=${encodeURIComponent(term)}`)
             .then(res => res.json())
             .then(data => {
                 searchResultsBody.innerHTML = '';
                 if (data.ok && data.clients.length > 0) {
                     data.clients.forEach(c => {
+                        const fullname = escapeHtml(c.fullname);
+                        const contact = escapeHtml(c.contact_no || '');
+                        const email = escapeHtml(c.email || '');
+                        const sex = escapeHtml(c.sex || '');
+                        const ofw = escapeHtml(c.ofw_name || 'N/A');
+                        const country = escapeHtml(c.country || 'N/A');
+                        const activeConcerns = parseInt(c.active_concerns || 0, 10);
+
                         searchResultsBody.innerHTML += `
                             <tr>
-                                <td><strong>${c.fullname}</strong></td>
-                                <td>${c.contact_no || 'N/A'}</td>
-                                <td>${c.ofw_name || 'N/A'}</td>
-                                <td>${c.country || 'N/A'}</td>
-                                <td><span class="badge badge-${c.active_concerns > 0 ? 'warning' : 'success'}">${c.active_concerns} Open</span></td>
+                                <td><strong>${fullname}</strong></td>
+                                <td>${contact || 'N/A'}</td>
+                                <td>${ofw}</td>
+                                <td>${country}</td>
+                                <td><span class="badge badge-${activeConcerns > 0 ? 'warning' : 'success'}">${activeConcerns} Open</span></td>
                                 <td>
                                     <button type="button" class="btn btn-xs btn-primary select-client-btn" 
                                         data-id="${c.id}" 
-                                        data-name="${c.fullname}" 
-                                        data-contact="${c.contact_no}" 
-                                        data-email="${c.email || ''}" 
-                                        data-sex="${c.sex || ''}">
+                                        data-name="${fullname}" 
+                                        data-contact="${contact}" 
+                                        data-email="${email}" 
+                                        data-sex="${sex}">
                                         <i class="fas fa-check-circle"></i> Use Client
                                     </button>
                                 </td>
                             </tr>
                         `;
                     });
-                    searchResults.style.display = 'block';
                 } else {
                     searchResultsBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No matching client records found. Proceed with new registration.</td></tr>';
-                    searchResults.style.display = 'block';
                 }
+            })
+            .catch(err => {
+                console.error('Search error:', err);
+                searchResultsBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger"><i class="fas fa-exclamation-triangle"></i> Error searching records.</td></tr>';
             });
     }
 
@@ -557,21 +554,46 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Select existing client from search table
+    // 6. Select Existing Client Logic
     document.addEventListener('click', function(e) {
-        if (e.target && e.target.closest('.select-client-btn')) {
-            const btn = e.target.closest('.select-client-btn');
+        const btn = e.target.closest('.select-client-btn');
+        if (btn) {
             document.getElementById('existing_client_id').value = btn.dataset.id;
-            document.getElementById('fullname').value = btn.dataset.name;
-            document.getElementById('fullname').readOnly = true;
-            document.getElementById('contact_no').value = btn.dataset.contact;
-            document.getElementById('contact_no').readOnly = true;
-            document.getElementById('email').value = btn.dataset.email;
-            document.getElementById('sex').value = btn.dataset.sex;
+            
+            const fullnameInput = document.getElementById('fullname');
+            fullnameInput.value = btn.dataset.name;
+            fullnameInput.readOnly = true;
+
+            const contactInput = document.getElementById('contact_no');
+            contactInput.value = btn.dataset.contact;
+            contactInput.readOnly = true;
+
+            if (btn.dataset.email) document.getElementById('email').value = btn.dataset.email;
+            if (btn.dataset.sex) document.getElementById('sex').value = btn.dataset.sex;
+
             document.getElementById('selected_client_badge').style.display = 'inline-block';
-            alert('Existing client selected! You can now proceed to log their new concern.');
+            document.getElementById('btn_reset_client').style.display = 'inline-block';
+            
+            alert('Existing client selected! Fields locked to prevent accidental alteration.');
         }
     });
+
+    // 7. Reset / Unlock Client Selection
+    function unlockClientFields() {
+        document.getElementById('existing_client_id').value = '';
+        
+        const fullnameInput = document.getElementById('fullname');
+        fullnameInput.readOnly = false;
+        
+        const contactInput = document.getElementById('contact_no');
+        contactInput.readOnly = false;
+
+        document.getElementById('selected_client_badge').style.display = 'none';
+        document.getElementById('btn_reset_client').style.display = 'none';
+    }
+
+    document.getElementById('btn_reset_client').addEventListener('click', unlockClientFields);
+    document.getElementById('btn_reset_form').addEventListener('click', unlockClientFields);
 });
 </script>
 </body>
