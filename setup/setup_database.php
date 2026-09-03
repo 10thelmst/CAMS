@@ -43,6 +43,20 @@ foreach ($statements as $statement) {
     }
 }
 
+// Ensure the required schema column exists for existing databases created before this fix.
+$users_exists = $conn->query("SHOW TABLES LIKE 'users'");
+if ($users_exists && $users_exists->num_rows > 0) {
+    $column_exists = $conn->query("SHOW COLUMNS FROM users LIKE 'password_change_required'");
+    if ($column_exists && $column_exists->num_rows === 0) {
+        $alter_sql = "ALTER TABLE users ADD COLUMN password_change_required TINYINT(1) NOT NULL DEFAULT 1 AFTER status";
+        if (!$conn->query($alter_sql)) {
+            $errors[] = 'Failed to add password_change_required column: ' . $conn->error;
+        } else {
+            $conn->query("UPDATE users SET password_change_required = 1 WHERE password_change_required IS NULL");
+        }
+    }
+}
+
 $conn->close();
 
 ?>
