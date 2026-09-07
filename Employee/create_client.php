@@ -12,15 +12,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $pdo->beginTransaction();
 
         $client_id = !empty($_POST['existing_client_id']) ? (int)$_POST['existing_client_id'] : null;
+        $first_name = trim($_POST['first_name'] ?? '');
+        $middle_name = trim($_POST['middle_name'] ?? '');
+        $last_name = trim($_POST['last_name'] ?? '');
+        $suffix = trim($_POST['suffix'] ?? '');
+        $full_name = trim(implode(' ', array_filter([$first_name, $middle_name, $last_name, $suffix], fn($value) => $value !== '')));
 
         // 1. Save or Update Client Information
         if (!$client_id) {
             $stmt = $pdo->prepare("
-                INSERT INTO clients (fullname, contact_no, email, sex, dob, is_ofw, address1, region_code, province_code, city_code, barangay_code)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO clients (first_name, middle_name, last_name, suffix, contact_no, email, sex, dob, is_ofw, address1, region_code, province_code, city_code, barangay_code)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $stmt->execute([
-                trim($_POST['fullname']),
+                $first_name,
+                $middle_name,
+                $last_name,
+                $suffix,
                 trim($_POST['contact_no']),
                 trim($_POST['email']),
                 $_POST['sex'] ?? null,
@@ -37,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         // 2. Save OFW Information
         $is_ofw = isset($_POST['is_ofw']) ? 1 : 0;
-        $ofw_name = $is_ofw ? trim($_POST['fullname']) : trim($_POST['ofw_name']);
+        $ofw_name = $is_ofw ? $full_name : trim($_POST['ofw_name']);
         $relationship = $is_ofw ? 'Self' : trim($_POST['relationship']);
 
         $stmt = $pdo->prepare("
@@ -195,41 +203,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
               </div>
             </div>
             <div class="card-body">
-              <div class="row">
-                <div class="col-md-4 form-group">
-                  <label>Transaction Type <span class="text-danger">*</span></label>
-                  <select name="contact_type" class="form-control" required>
-                    <option value="Walk-in">Walk-in</option>
-                    <option value="Phone">Phone</option>
-                    <option value="Email">Email</option>
-                    <option value="Online">Online</option>
+              <div class="row no-gutters align-items-end">
+                <div class="col-md-3 pr-2 form-group mb-2">
+                  <label>Last Name <span class="text-danger">*</span></label>
+                  <input type="text" name="last_name" id="last_name" class="form-control" placeholder="e.g. Santos" required>
+                </div>
+                <div class="col-md-4 pr-2 form-group mb-2">
+                  <label>First Name <span class="text-danger">*</span></label>
+                  <input type="text" name="first_name" id="first_name" class="form-control" placeholder="e.g. Juan" required>
+                </div>
+                <div class="col-md-3 pr-2 form-group mb-2">
+                  <label>Middle Name</label>
+                  <input type="text" name="middle_name" id="middle_name" class="form-control" placeholder="e.g. Dela Cruz">
+                </div>
+                <div class="col-md-2 form-group mb-2">
+                  <label>Suffix</label>
+                  <select name="suffix" id="suffix" class="form-control">
+                    <option value="">--</option>
+                    <option value="Jr.">Jr.</option>
+                    <option value="Jra.">Jra.</option>
+                    <option value="Sr.">Sr.</option>
+                    <option value="II">II</option>
+                    <option value="III">III</option>
+                    <option value="IV">IV</option>
                   </select>
-                </div>
-                <div class="col-md-4 form-group">
-                  <label>Client Full Name <span class="text-danger">*</span></label>
-                  <input type="text" name="fullname" id="fullname" class="form-control" placeholder="Last Name, First Name, Middle Name" required>
-                </div>
-                <div class="col-md-4 form-group">
-                  <label>Contact Number <span class="text-danger">*</span></label>
-                  <input type="text" name="contact_no" id="contact_no" class="form-control" placeholder="09XXXXXXXXX" required>
                 </div>
               </div>
 
-              <div class="row">
-                <div class="col-md-4 form-group">
+              <div class="row no-gutters">
+                <div class="col-md-4 pr-2 form-group mb-2">
+                  <label>Contact Number <span class="text-danger">*</span></label>
+                  <input type="text" name="contact_no" id="contact_no" class="form-control" placeholder="09XXXXXXXXX" required>
+                </div>
+                <div class="col-md-1 pr-2 form-group mb-2">
+                  <label>Gender</label>
+                  <select name="sex" id="sex" class="form-control">
+                    <option value="">--</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                </div>
+                <div class="col-md-4 pr-2 form-group mb-2">
                   <label>Email Address</label>
                   <input type="email" name="email" id="email" class="form-control" placeholder="client@example.com">
                 </div>
-                <div class="col-md-4 form-group">
-                  <label>Sex</label>
-                  <select name="sex" id="sex" class="form-control">
-                    <option value="">-- Select --</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div class="col-md-4 form-group">
+                <div class="col-md-3 form-group mb-2">
                   <label>Date of Birth</label>
                   <input type="date" name="dob" id="dob" class="form-control">
                 </div>
@@ -340,11 +358,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             </div>
             <div class="card-body">
               <div class="row">
-                <div class="col-md-6 form-group">
+                <div class="col-md-4 form-group">
+                  <label>Transaction Type <span class="text-danger">*</span></label>
+                  <select name="contact_type" class="form-control" required>
+                    <option value="Walk-in">Walk-in</option>
+                    <option value="Phone">Phone</option>
+                    <option value="Email">Email</option>
+                    <option value="Online">Online</option>
+                  </select>
+                </div>
+                <div class="col-md-4 form-group">
                   <label>Concern Subject <span class="text-danger">*</span></label>
                   <input type="text" name="subject" class="form-control" placeholder="e.g. Unpaid Salary, Repatriation Request" required>
                 </div>
-                <div class="col-md-3 form-group">
+                <div class="col-md-4 form-group">
                   <label>Category <span class="text-danger">*</span></label>
                   <select name="category" class="form-control" required>
                     <option value="">-- Select Category --</option>
@@ -356,7 +383,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <option value="Others">Others</option>
                   </select>
                 </div>
-                <div class="col-md-3 form-group">
+              </div>
+
+              <div class="row">
+                <div class="col-md-4 form-group offset-md-8">
                   <label>Program-in-Charge <span class="text-danger">*</span></label>
                   <select name="program_in_charge" class="form-control" required>
                     <option value="PACD">Public Assistance Desk (PACD)</option>
@@ -486,6 +516,28 @@ document.addEventListener('DOMContentLoaded', function () {
     isOfwCheckbox.addEventListener('change', toggleOfwFields);
     toggleOfwFields();
 
+    function splitFullName(fullName) {
+        const parts = String(fullName || '').trim().split(/\s+/).filter(Boolean);
+        const suffixes = ['Jr.', 'Jra.', 'Sr.', 'II', 'III', 'IV'];
+        let suffix = '';
+        let lastIndex = parts.length - 1;
+
+        if (suffixes.includes(parts[lastIndex])) {
+            suffix = parts[lastIndex];
+            parts.pop();
+        }
+
+        if (parts.length === 0) return { first_name: '', middle_name: '', last_name: '', suffix: '' };
+        if (parts.length === 1) return { first_name: parts[0], middle_name: '', last_name: '', suffix };
+        if (parts.length === 2) return { first_name: parts[0], middle_name: '', last_name: parts[1], suffix };
+        return {
+            first_name: parts[0],
+            middle_name: parts.slice(1, -1).join(' '),
+            last_name: parts[parts.length - 1],
+            suffix
+        };
+    }
+
     // 5. Duplicate Search Engine
     const btnSearch = document.getElementById('btn_search');
     const searchTerm = document.getElementById('search_term');
@@ -559,10 +611,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const btn = e.target.closest('.select-client-btn');
         if (btn) {
             document.getElementById('existing_client_id').value = btn.dataset.id;
-            
-            const fullnameInput = document.getElementById('fullname');
-            fullnameInput.value = btn.dataset.name;
-            fullnameInput.readOnly = true;
+
+            const splitName = splitFullName(btn.dataset.name);
+            document.getElementById('first_name').value = splitName.first_name;
+            document.getElementById('middle_name').value = splitName.middle_name;
+            document.getElementById('last_name').value = splitName.last_name;
+            document.getElementById('suffix').value = splitName.suffix;
+            document.getElementById('first_name').readOnly = true;
+            document.getElementById('middle_name').readOnly = true;
+            document.getElementById('last_name').readOnly = true;
+            document.getElementById('suffix').disabled = true;
 
             const contactInput = document.getElementById('contact_no');
             contactInput.value = btn.dataset.contact;
@@ -581,9 +639,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // 7. Reset / Unlock Client Selection
     function unlockClientFields() {
         document.getElementById('existing_client_id').value = '';
-        
-        const fullnameInput = document.getElementById('fullname');
-        fullnameInput.readOnly = false;
+
+        document.getElementById('first_name').readOnly = false;
+        document.getElementById('middle_name').readOnly = false;
+        document.getElementById('last_name').readOnly = false;
+        document.getElementById('suffix').disabled = false;
         
         const contactInput = document.getElementById('contact_no');
         contactInput.readOnly = false;
