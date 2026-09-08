@@ -5,6 +5,9 @@ require_once __DIR__ . '/../config/database.php'; // Database Connection ($pdo)
 
 $message = '';
 $message_type = '';
+$title = 'Create Client';
+$active_page = 'create_client';
+ob_start();
 
 // Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_client_case') {
@@ -45,15 +48,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         // 2. Save OFW Information
         $is_ofw = isset($_POST['is_ofw']) ? 1 : 0;
-        $ofw_name = $is_ofw ? $full_name : trim($_POST['ofw_name']);
+        $ofw_first_name = trim($_POST['ofw_first_name'] ?? '');
+        $ofw_middle_name = trim($_POST['ofw_middle_name'] ?? '');
+        $ofw_last_name = trim($_POST['ofw_last_name'] ?? '');
+        $ofw_suffix = trim($_POST['ofw_suffix'] ?? '');
+        $ofw_full_name = trim(implode(' ', array_filter([$ofw_first_name, $ofw_middle_name, $ofw_last_name, $ofw_suffix], fn($value) => $value !== '')));
+        $ofw_name = $is_ofw ? $full_name : $ofw_full_name;
         $relationship = $is_ofw ? 'Self' : trim($_POST['relationship']);
 
         $stmt = $pdo->prepare("
-            INSERT INTO ofw_information (client_id, ofw_name, country, employment_type, relationship)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO ofw_information (client_id, ofw_first_name, ofw_middle_name, ofw_last_name, ofw_suffix, ofw_name, country, employment_type, relationship)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $client_id,
+            $ofw_first_name,
+            $ofw_middle_name,
+            $ofw_last_name,
+            $ofw_suffix,
             $ofw_name,
             trim($_POST['country']),
             $_POST['employment_type'],
@@ -115,6 +127,187 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <style>
+    body {
+      background: #f3f6fb;
+      font-family: 'Source Sans Pro', sans-serif;
+    }
+
+    .content-wrapper {
+      background: #f3f6fb;
+      min-height: 100vh;
+    }
+
+    .content-header {
+      padding-bottom: 0.5rem;
+    }
+
+    .content-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1f2937;
+      letter-spacing: -0.02em;
+    }
+
+    .card {
+      border: 1px solid #e3e8ef;
+      border-radius: 18px;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+      overflow: hidden;
+      margin-bottom: 1.4rem;
+    }
+
+    .card-header {
+      background: linear-gradient(135deg, #f8fbff 0%, #eef5ff 100%);
+      border-bottom: 1px solid #e5edf8;
+      padding: 0.9rem 1.25rem;
+    }
+
+    .card-title {
+      color: #1e293b;
+      font-size: 1.12rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .card-body {
+      padding: 1.25rem 1.25rem 1rem;
+      background: white;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 0.45rem;
+      letter-spacing: 0.01em;
+    }
+
+    .form-control {
+      display: block;
+      width: 100%;
+      min-height: 44px;
+      border-radius: 12px;
+      border: 1px solid #d7dfeb;
+      background-color: #fff;
+      color: #1f2937;
+      box-shadow: none;
+      transition: all 0.2s ease-in-out;
+      padding: 0.65rem 0.8rem;
+    }
+
+    .form-control:focus {
+      border-color: #7ab7db;
+      box-shadow: 0 0 0 0.18rem rgba(76, 139, 191, 0.16);
+    }
+
+    .form-control::placeholder {
+      color: #94a3b8;
+      opacity: 1;
+    }
+
+    select.form-control {
+      background-image: linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%);
+      background-position: calc(100% - 18px) calc(50% - 2px), calc(100% - 12px) calc(50% - 2px);
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      padding-right: 2rem;
+    }
+
+    .input-group .form-control {
+      border-radius: 12px 0 0 12px;
+    }
+
+    .input-group-append .btn {
+      border-radius: 0 12px 12px 0;
+      min-height: 44px;
+      font-weight: 700;
+    }
+
+    .btn {
+      border-radius: 12px;
+      font-weight: 700;
+      padding: 0.6rem 1rem;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #1d73c7 0%, #2a5bd7 100%);
+      border-color: transparent;
+      box-shadow: 0 8px 18px rgba(29, 115, 199, 0.2);
+    }
+
+    .btn-warning {
+      background: linear-gradient(135deg, #f6c453 0%, #f0b429 100%);
+      border-color: transparent;
+      color: #382d04;
+      box-shadow: 0 8px 18px rgba(240, 180, 41, 0.2);
+    }
+
+    .btn-default {
+      background: #fff;
+      border-color: #d9e0eb;
+      color: #475569;
+    }
+
+    .table thead th {
+      background: #edf3ff;
+      color: #1f2d3d;
+      font-size: 0.83rem;
+      letter-spacing: 0.01em;
+      text-transform: uppercase;
+      border-bottom: 1px solid #dfe7f3;
+    }
+
+    .table td {
+      vertical-align: middle;
+      padding: 0.8rem 0.75rem;
+    }
+
+    .alert {
+      border-radius: 14px;
+      border: none;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+      font-size: 0.98rem;
+    }
+
+    .breadcrumb {
+      background: transparent;
+      padding: 0.5rem 0 0;
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 0.55rem 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .text-muted {
+      color: #64748b !important;
+    }
+
+    .icheck-primary label {
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .form-group.clearfix {
+      padding: 0.4rem 0 0.2rem;
+    }
+  </style>
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
@@ -230,7 +423,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 </div>
               </div>
 
-              <div class="row no-gutters">
+              <div class="row no-gutters align-items-end">
                 <div class="col-md-4 pr-2 form-group mb-2">
                   <label>Contact Number <span class="text-danger">*</span></label>
                   <input type="text" name="contact_no" id="contact_no" class="form-control" placeholder="09XXXXXXXXX" required>
@@ -315,12 +508,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 </div>
               </div>
 
-              <div class="row">
-                <div class="col-md-6 form-group" id="ofw_name_wrapper">
-                  <label>OFW Full Name <span class="text-danger">*</span></label>
-                  <input type="text" name="ofw_name" id="ofw_name" class="form-control" placeholder="Last Name, First Name, Middle Name">
+              <div class="row no-gutters align-items-end" id="ofw_name_wrapper">
+                <div class="col-md-3 pr-2 form-group mb-2">
+                  <label>OFW Last Name <span class="text-danger">*</span></label>
+                  <input type="text" name="ofw_last_name" id="ofw_last_name" class="form-control" placeholder="e.g. Santos">
                 </div>
-                <div class="col-md-6 form-group" id="relationship_wrapper">
+                <div class="col-md-4 pr-2 form-group mb-2">
+                  <label>OFW First Name <span class="text-danger">*</span></label>
+                  <input type="text" name="ofw_first_name" id="ofw_first_name" class="form-control" placeholder="e.g. Juan">
+                </div>
+                <div class="col-md-3 pr-2 form-group mb-2">
+                  <label>OFW Middle Name</label>
+                  <input type="text" name="ofw_middle_name" id="ofw_middle_name" class="form-control" placeholder="e.g. Dela Cruz">
+                </div>
+                <div class="col-md-2 form-group mb-2">
+                  <label>Suffix</label>
+                  <select name="ofw_suffix" id="ofw_suffix" class="form-control">
+                    <option value="">--</option>
+                    <option value="Jr.">Jr.</option>
+                    <option value="Jra.">Jra.</option>
+                    <option value="Sr.">Sr.</option>
+                    <option value="II">II</option>
+                    <option value="III">III</option>
+                    <option value="IV">IV</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row no-gutters align-items-end">
+                <div class="col-md-6 pr-2 form-group mb-2" id="relationship_wrapper">
                   <label>Client's Relationship to OFW <span class="text-danger">*</span></label>
                   <select name="relationship" id="relationship" class="form-control">
                     <option value="">-- Select Relationship --</option>
@@ -334,12 +550,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 </div>
               </div>
 
-              <div class="row">
-                <div class="col-md-6 form-group">
+              <div class="row no-gutters align-items-end">
+                <div class="col-md-6 pr-2 form-group mb-2">
                   <label>Country of Deployment <span class="text-danger">*</span></label>
                   <input type="text" name="country" id="country" class="form-control" placeholder="e.g. Saudi Arabia, UAE, Singapore" required>
                 </div>
-                <div class="col-md-6 form-group">
+                <div class="col-md-6 form-group mb-2">
                   <label>Employment Type <span class="text-danger">*</span></label>
                   <select name="employment_type" id="employment_type" class="form-control" required>
                     <option value="">-- Select Type --</option>
@@ -497,19 +713,22 @@ document.addEventListener('DOMContentLoaded', function () {
     const isOfwCheckbox = document.getElementById('is_ofw');
     const ofwNameWrapper = document.getElementById('ofw_name_wrapper');
     const relationshipWrapper = document.getElementById('relationship_wrapper');
-    const ofwNameInput = document.getElementById('ofw_name');
+    const ofwLastNameInput = document.getElementById('ofw_last_name');
+    const ofwFirstNameInput = document.getElementById('ofw_first_name');
     const relationshipSelect = document.getElementById('relationship');
 
     function toggleOfwFields() {
         if (isOfwCheckbox.checked) {
             ofwNameWrapper.style.display = 'none';
             relationshipWrapper.style.display = 'none';
-            ofwNameInput.removeAttribute('required');
+            ofwLastNameInput.removeAttribute('required');
+            ofwFirstNameInput.removeAttribute('required');
             relationshipSelect.removeAttribute('required');
         } else {
             ofwNameWrapper.style.display = 'block';
             relationshipWrapper.style.display = 'block';
-            ofwNameInput.setAttribute('required', 'required');
+            ofwLastNameInput.setAttribute('required', 'required');
+            ofwFirstNameInput.setAttribute('required', 'required');
             relationshipSelect.setAttribute('required', 'required');
         }
     }
@@ -656,5 +875,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('btn_reset_form').addEventListener('click', unlockClientFields);
 });
 </script>
-</body>
-</html>
+<?php
+$content = ob_get_clean();
+require_once 'layout.php';
+?>
