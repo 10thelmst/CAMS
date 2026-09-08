@@ -508,7 +508,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 </div>
               </div>
 
-              <div class="row no-gutters align-items-end" id="ofw_name_wrapper">
+              <div class="row no-gutters align-items-end">
                 <div class="col-md-3 pr-2 form-group mb-2">
                   <label>OFW Last Name <span class="text-danger">*</span></label>
                   <input type="text" name="ofw_last_name" id="ofw_last_name" class="form-control" placeholder="e.g. Santos">
