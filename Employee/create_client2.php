@@ -326,7 +326,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <div class="detail-row"><div class="detail-label">Email Address</div><input class="editable-form-field" type="email" name="email" id="email" data-field="email" placeholder="client@example.com"></div>
                     <div class="detail-row"><div class="detail-label">Date of Birth</div><input class="editable-form-field" type="date" name="dob" id="dob" data-field="dob"></div>
                     <div class="detail-row"><div class="detail-label">Address 1</div><input class="editable-form-field" type="text" name="address1" id="address1" data-field="address1" placeholder="House No., Street, Subdivision" required></div>
-                    <div class="detail-row"><div class="detail-label">Region</div><select class="editable-form-field" id="region_display" data-field="region_name" disabled><option value="05">Region V (Bicol)</option></select></div>
+                    <div class="detail-row"><div class="detail-label">Region</div><select class="editable-form-field" name="region_code" id="region_code" data-field="region_name"><option value="">Loading Regions...</option></select></div>
                     <div class="detail-row"><div class="detail-label">Province</div><select class="editable-form-field" name="province_code" id="province_code" data-field="province_name" required disabled><option value="">-- Select Province --</option></select></div>
                     <div class="detail-row"><div class="detail-label">Town / City</div><select class="editable-form-field" name="city_code" id="city_code" data-field="city_name" disabled><option value="">-- Select Town/City --</option></select></div>
                     <div class="detail-row"><div class="detail-label">Barangay</div><select class="editable-form-field" name="barangay_code" id="barangay_code" data-field="barangay_name" disabled><option value="">-- Select Barangay --</option></select></div>
@@ -334,7 +334,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 </div>
               </div>
 
-              <input type="hidden" name="region_code" value="05">
             </div>
           </div>
 
@@ -370,7 +369,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <div class="crm-form-group"><label>Program-in-Charge <span class="text-danger">*</span></label><select name="program_in_charge" class="form-control crm-form-control" required><option value="PACD">Public Assistance Desk (PACD)</option><option value="Welfare Division">Welfare Division</option><option value="Legal Unit">Legal Unit</option><option value="Reintegration Unit">Reintegration Unit</option></select></div>
               </div>
               <div class="crm-form-group" style="margin-top:14px;"><label>Detailed Description of Concern <span class="text-danger">*</span></label><textarea name="description" class="form-control crm-form-control" rows="4" placeholder="Provide full details of the complaint or request..." required></textarea></div>
-              <div class="crm-form-group" style="margin-top:14px;"><label>Initial Action Taken (Optional)</label><textarea name="initial_action" class="form-control crm-form-control" rows="2" placeholder="e.g. Conducted initial interview, endorsed to legal officer..."></textarea></div>
+            </div>
+          </div>
+
+          <div class="panel-wrap">
+            <div class="panel-title">Step 5: Action Taken / Case Log</div>
+            <div class="panel-body">
+              <p class="mini-note">This log is attached to the new case record and stores who created it.</p>
+              <div class="crm-form-group">
+                <label>Action Taken <span class="text-danger">*</span></label>
+                <textarea name="initial_action" class="form-control crm-form-control" rows="3" placeholder="Describe the action taken, callback, referral, or next step..."></textarea>
+              </div>
+              <div class="crm-form-group" style="margin-top:14px;">
+                <label>Performed By</label>
+                <input type="text" class="form-control crm-form-control" value="<?= htmlspecialchars($_SESSION['username'] ?? ($_SESSION['user_name'] ?? 'Current User')) ?>" readonly>
+              </div>
             </div>
             <div class="crm-footer">
               <button type="reset" class="crm-btn secondary" id="btn_reset_form"><i class="fas fa-undo mr-1"></i> Reset Form</button>
@@ -390,6 +403,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
       const provinceSelect = document.getElementById('province_code');
       const citySelect = document.getElementById('city_code');
       const barangaySelect = document.getElementById('barangay_code');
+      const regionSelect = document.getElementById('region_code');
       const DEFAULT_REGION_CODE = '05';
 
       function escapeHtml(str) {
@@ -397,17 +411,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
       }
 
-      function loadProvincesForRegionV() {
-        fetch(`../auth/ajax_address_json.php?action=get_provinces&region_code=${DEFAULT_REGION_CODE}`)
+      function loadRegions() {
+        fetch('../auth/ajax_address_json.php?action=get_regions')
+          .then(res => res.json())
+          .then(data => {
+            regionSelect.innerHTML = '';
+            data.forEach(r => {
+              const selected = r.code === DEFAULT_REGION_CODE ? 'selected' : '';
+              regionSelect.innerHTML += `<option value="${r.code}" ${selected}>${r.name}</option>`;
+            });
+            if (!regionSelect.value) {
+              regionSelect.value = DEFAULT_REGION_CODE;
+            }
+            loadProvinces(regionSelect.value || DEFAULT_REGION_CODE);
+          })
+          .catch(err => console.error('Error fetching regions:', err));
+      }
+
+      function loadProvinces(regionCode) {
+        fetch(`../auth/ajax_address_json.php?action=get_provinces&region_code=${regionCode}`)
           .then(res => res.json())
           .then(data => {
             provinceSelect.innerHTML = '<option value="">-- Select Province --</option>';
             data.forEach(p => { provinceSelect.innerHTML += `<option value="${p.code}">${p.name}</option>`; });
             provinceSelect.disabled = false;
+            citySelect.innerHTML = '<option value="">-- Select Town/City --</option>';
+            barangaySelect.innerHTML = '<option value="">-- Select Barangay --</option>';
+            citySelect.disabled = true;
+            barangaySelect.disabled = true;
           })
           .catch(err => console.error('Error fetching provinces:', err));
       }
-      loadProvincesForRegionV();
+
+      loadRegions();
+
+      regionSelect.addEventListener('change', function () {
+        citySelect.innerHTML = '<option value="">-- Select Town/City --</option>';
+        barangaySelect.innerHTML = '<option value="">-- Select Barangay --</option>';
+        citySelect.disabled = true;
+        barangaySelect.disabled = true;
+        loadProvinces(this.value || DEFAULT_REGION_CODE);
+      });
 
       provinceSelect.addEventListener('change', function () {
         citySelect.innerHTML = '<option value="">-- Select Town/City (Optional) --</option>';
