@@ -3,6 +3,8 @@
 require_once __DIR__ . '/../auth/auth_check.php'; // Session & Auth Guard
 require_once __DIR__ . '/../config/database.php'; // Database Connection ($pdo)
 
+$pdo = get_cams_pdo();
+
 $message = '';
 $message_type = '';
 $title = 'Create Client';
@@ -508,7 +510,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 </div>
               </div>
 
-              <div class="row no-gutters align-items-end">
+              <div class="row no-gutters align-items-end" id="ofw_name_wrapper">
                 <div class="col-md-3 pr-2 form-group mb-2">
                   <label>OFW Last Name <span class="text-danger">*</span></label>
                   <input type="text" name="ofw_last_name" id="ofw_last_name" class="form-control" placeholder="e.g. Santos">
@@ -719,17 +721,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function toggleOfwFields() {
         if (isOfwCheckbox.checked) {
-            ofwNameWrapper.style.display = 'none';
-            relationshipWrapper.style.display = 'none';
-            ofwLastNameInput.removeAttribute('required');
-            ofwFirstNameInput.removeAttribute('required');
-            relationshipSelect.removeAttribute('required');
+            if (ofwNameWrapper) ofwNameWrapper.style.display = 'none';
+            if (relationshipWrapper) relationshipWrapper.style.display = 'none';
+            if (ofwLastNameInput) ofwLastNameInput.removeAttribute('required');
+            if (ofwFirstNameInput) ofwFirstNameInput.removeAttribute('required');
+            if (relationshipSelect) relationshipSelect.removeAttribute('required');
         } else {
-            ofwNameWrapper.style.display = 'block';
-            relationshipWrapper.style.display = 'block';
-            ofwLastNameInput.setAttribute('required', 'required');
-            ofwFirstNameInput.setAttribute('required', 'required');
-            relationshipSelect.setAttribute('required', 'required');
+            if (ofwNameWrapper) ofwNameWrapper.style.display = 'block';
+            if (relationshipWrapper) relationshipWrapper.style.display = 'block';
+            if (ofwLastNameInput) ofwLastNameInput.setAttribute('required', 'required');
+            if (ofwFirstNameInput) ofwFirstNameInput.setAttribute('required', 'required');
+            if (relationshipSelect) relationshipSelect.setAttribute('required', 'required');
         }
     }
     isOfwCheckbox.addEventListener('change', toggleOfwFields);

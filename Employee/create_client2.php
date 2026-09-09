@@ -3,6 +3,8 @@
 require_once __DIR__ . '/../auth/auth_check.php'; // Session & Auth Guard
 require_once __DIR__ . '/../config/database.php'; // Database Connection ($pdo)
 
+$pdo = get_cams_pdo();
+
 $message = '';
 $message_type = '';
 $title = 'Create Client';
@@ -350,7 +352,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <div class="detail-row"><div class="detail-label">Suffix</div><select class="editable-form-field" name="ofw_suffix" id="ofw_suffix" data-field="ofw_suffix"><option value="">--</option><option value="Jr.">Jr.</option><option value="Jra.">Jra.</option><option value="Sr.">Sr.</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option></select></div>
                   </div>
                   <div class="detail-column">
-                    <div class="detail-row"><div class="detail-label">Relationship</div><select class="editable-form-field" name="relationship" id="relationship" data-field="relationship"><option value="">-- Select Relationship --</option><option value="Spouse">Spouse</option><option value="Child">Child</option><option value="Parent">Parent</option><option value="Sibling">Sibling</option><option value="Relative">Relative</option><option value="Representative">Representative</option></select></div>
+                    <div id="relationship_wrapper" class="detail-row"><div class="detail-label">Relationship</div><select class="editable-form-field" name="relationship" id="relationship" data-field="relationship"><option value="">-- Select Relationship --</option><option value="Spouse">Spouse</option><option value="Child">Child</option><option value="Parent">Parent</option><option value="Sibling">Sibling</option><option value="Relative">Relative</option><option value="Representative">Representative</option></select></div>
                     <div class="detail-row"><div class="detail-label">Country</div><input class="editable-form-field" type="text" name="country" id="country" data-field="country" placeholder="e.g. Saudi Arabia, UAE, Singapore"></div>
                     <div class="detail-row"><div class="detail-label">Employment Type</div><select class="editable-form-field" name="employment_type" id="employment_type" data-field="employment_type"><option value="">-- Select Type --</option><option value="Land-based">Land-based</option><option value="Sea-based">Sea-based</option></select></div>
                   </div>
@@ -535,15 +537,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
       function toggleOfwFields() {
         if (isOfwCheckbox.checked) {
-          relationshipWrapper.style.display = 'none';
-          ofwLastNameInput.removeAttribute('required');
-          ofwFirstNameInput.removeAttribute('required');
-          relationshipSelect.removeAttribute('required');
+          if (relationshipWrapper) relationshipWrapper.style.display = 'none';
+          if (ofwLastNameInput) ofwLastNameInput.removeAttribute('required');
+          if (ofwFirstNameInput) ofwFirstNameInput.removeAttribute('required');
+          if (relationshipSelect) relationshipSelect.removeAttribute('required');
         } else {
-          relationshipWrapper.style.display = 'block';
-          ofwLastNameInput.setAttribute('required', 'required');
-          ofwFirstNameInput.setAttribute('required', 'required');
-          relationshipSelect.setAttribute('required', 'required');
+          if (relationshipWrapper) relationshipWrapper.style.display = 'block';
+          if (ofwLastNameInput) ofwLastNameInput.setAttribute('required', 'required');
+          if (ofwFirstNameInput) ofwFirstNameInput.setAttribute('required', 'required');
+          if (relationshipSelect) relationshipSelect.setAttribute('required', 'required');
         }
       }
 
