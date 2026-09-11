@@ -1,44 +1,127 @@
-# CAMS Flaws And Required Fixes
+# CAMS Final Version
 
-## Critical Security Issues
+## Final Requirement
 
-- **Inactive users can still log in.** The login query does not filter for `status = 'active'`.
-- **Forced password changes can be bypassed for newly imported OWWA users.** Imported users are marked `password_change_required = 1`, but are immediately logged in and redirected through the dashboard path.
-- **There is no CSRF protection.** User creation, editing, deletion, password changes, and imports can be triggered by forged requests.
-- **Setup scripts are publicly accessible.** Scripts such as `setup/reset_user_password.php`, `setup/fix_passwords.php`, and `setup/add_password_change_required.php` can modify the database without authentication.
-- **Password reset uses GET and accepts any username.** Anyone who can access `setup/reset_user_password.php` can reset another user's password.
-- **`setup/fix_passwords.php` resets every user's password to the same known password.**
-- **The session ID is not regenerated after successful login.** This creates a session-fixation risk.
-- **Database credentials are hardcoded and duplicated.** Several files connect as `root` with an empty password instead of using one secure configuration.
+The system should be built around a reusable client model and a reusable OFW model.
 
-## Data And Authorization Problems
+- A client record should be reusable across multiple cases and transactions.
+- An OFW record should also be reusable and not locked to just one client.
+- The relationship between client and OFW should be many-to-many.
+- For each client, we only need to collect the following details:
+  - Subject
+  - Verbatim
+  - Action Taken
 
-- **Username uniqueness is not checked** when creating or editing users.
-- **Roles and status values are not validated server-side.** The application trusts POST data in the user-management forms.
-- **Edit-user password length is only checked in HTML**, not in PHP.
-- **User and role updates are not transactional.** A user update can succeed while role changes fail, leaving inconsistent permissions.
-- **OWWA import can create duplicate or conflicting accounts**, especially during concurrent requests.
-- **OWWA users receive a predictable default password**, which is also exposed in setup pages and documentation.
-- **Role selection order determines the primary role**, which can cause inconsistent redirects for multi-role users.
+## Core Idea
 
-## Information Disclosure
+We are not creating one-off client entries every time.
+Instead, the system should allow the same client and the same OFW to be reused in multiple records without duplication.
 
-- Setup and test pages expose usernames, emails, roles, database state, and password-reset links.
-- Database connection errors are displayed directly to users.
-- `setup/setup_database.php` exposes test credentials after setup.
+A client can be linked to many OFWs, and an OFW can be linked to many clients.
 
-## Broken Or Incomplete Project Structure
+## Data Design
 
-- `config/database.php` is referenced throughout the application but is absent from the workspace.
-- `database.sql` is referenced by the README and setup scripts but is absent from the workspace.
-- The documentation claims files and features that are not currently present, so installation cannot reliably work.
+### 1. Clients
+A reusable master record for each client.
 
-## Recommended Fix Order
+Fields:
+- id
+- client_name
+- contact_number
+- email
+- address
+- created_at
+- updated_at
 
-1. Restore and secure the database configuration and schema.
-2. Remove or protect all setup and diagnostic scripts.
-3. Enforce active-user checks and forced password changes in the authentication flow.
-4. Add CSRF protection and regenerate the session ID after login.
-5. Centralize database connections and remove hardcoded credentials.
-6. Add server-side validation and database uniqueness constraints.
-7. Wrap user and role updates in transactions and harden OWWA imports.
+### 2. OFWs
+A reusable master record for each OFW.
+
+Fields:
+- id
+- full_name
+- country
+- mobile_number
+- email
+- status
+- created_at
+- updated_at
+
+### 3. Client_OFW Relationship
+Many-to-many relationship table.
+
+Fields:
+- id
+- client_id
+- ofw_id
+- relationship_type
+- notes
+- created_at
+
+This allows:
+- one client to have multiple OFWs
+- one OFW to be connected to multiple clients
+
+### 4. Client Case Record
+Each client should have a collection of case records.
+
+Fields:
+- id
+- client_id
+- subject
+- verbatim
+- action_taken
+- created_at
+- updated_at
+
+This is the main collection table for every client.
+
+## Business Rule
+
+For each client, the system will only collect:
+
+- Subject
+- Verbatim
+- Action Taken
+
+No extra unnecessary fields should be forced for every entry.
+The system should stay simple and reusable.
+
+## Example
+
+Client: Maria Santos
+OFW: Juan dela Cruz
+
+Relationship:
+- Maria Santos is linked to Juan dela Cruz
+- Juan dela Cruz may also be linked to other clients in the future
+
+Case record for Maria Santos:
+- Subject: Follow-up on complaint
+- Verbatim: "I was not informed about the status of my case."
+- Action Taken: Coordinated with the office and provided update to the client.
+
+## Final System Goal
+
+The final system should behave like this:
+
+1. Client is reusable
+2. OFW is reusable
+3. Client and OFW have a many-to-many relationship
+4. For each client, the system only stores:
+   - Subject
+   - Verbatim
+   - Action Taken
+
+## Summary
+
+This is the final version of the requirement:
+
+- Reusable Client
+- Reusable OFW
+- Many-to-many relationship between Client and OFW
+- Per client record collection of:
+  - Subject
+  - Verbatim
+  - Action Taken
+
+Everything else should be kept minimal and focused on this structure.
