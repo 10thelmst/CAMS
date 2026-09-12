@@ -125,3 +125,21 @@ This is the final version of the requirement:
   - Action Taken
 
 Everything else should be kept minimal and focused on this structure.
+
+## Free Hosting Workaround
+
+For free deployment of this PHP and MySQL application, use InfinityFree.
+
+InfinityFree provides:
+
+- Free PHP hosting
+- Free MySQL database
+- phpMyAdmin access
+- FTP or file manager access
+- A free subdomain such as `https://your-subdomain.infinityfreeapp.com/`
+
+Before deployment, back up the CAMS database from localhost using phpMyAdmin or `mysqldump` and keep the exported `.sql` file as a recovery copy.
+
+Export the local CAMS database with phpMyAdmin, import it into the InfinityFree MySQL database, and update `config/database.php` with the hosting provider's database host, database name, username, and password.
+
+The OWWA database integration may not work on free hosting if the OWWA database is only accessible from the local network. In that case, deploy the CAMS database to InfinityFree but disable or replace the OWWA import connection, or use hosting that can access both databases.
