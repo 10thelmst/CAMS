@@ -11,6 +11,33 @@ $title = 'Create Client';
 $active_page = 'create_client';
 ob_start();
 
+function getExistingTableColumns($pdo, $tableName) {
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM `{$tableName}`");
+        if (!$stmt) {
+            return [];
+        }
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    } catch (Exception $e) {
+        return [];
+    }
+}
+
+function buildInsertPayload($pdo, $tableName, $fields) {
+    $existingColumns = getExistingTableColumns($pdo, $tableName);
+    $columns = [];
+    $values = [];
+
+    foreach ($fields as $column => $value) {
+        if (in_array($column, $existingColumns, true)) {
+            $columns[] = $column;
+            $values[] = $value;
+        }
+    }
+
+    return [$columns, $values];
+}
+
 // Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_client_case') {
     try {
@@ -21,31 +48,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $middle_name = trim($_POST['middle_name'] ?? '');
         $last_name = trim($_POST['last_name'] ?? '');
         $suffix = trim($_POST['suffix'] ?? '');
+        $province_code = trim($_POST['province_code'] ?? '');
         $full_name = trim(implode(' ', array_filter([$first_name, $middle_name, $last_name, $suffix], fn($value) => $value !== '')));
+
+        $missing_fields = [];
+        if ($first_name === '') $missing_fields[] = 'First Name';
+        if ($last_name === '') $missing_fields[] = 'Last Name';
+        if ($province_code === '') $missing_fields[] = 'Province';
+
+        if (!empty($missing_fields)) {
+            throw new Exception('Please fill in the required field(s): ' . implode(', ', $missing_fields) . '.');
+        }
 
         // 1. Save or Update Client Information
         if (!$client_id) {
-            $stmt = $pdo->prepare("
-                INSERT INTO clients (first_name, middle_name, last_name, suffix, contact_no, email, sex, dob, is_ofw, address1, region_code, province_code, city_code, barangay_code)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ");
-            $stmt->execute([
-                $first_name,
-                $middle_name,
-                $last_name,
-                $suffix,
-                trim($_POST['contact_no']),
-                trim($_POST['email']),
-                $_POST['sex'] ?? null,
-                !empty($_POST['dob']) ? $_POST['dob'] : null,
-                isset($_POST['is_ofw']) ? 1 : 0,
-                trim($_POST['address1']),
-                $_POST['region_code'] ?? '05',
-                $_POST['province_code'] ?? null,
-                !empty($_POST['city_code']) ? $_POST['city_code'] : null,
-                !empty($_POST['barangay_code']) ? $_POST['barangay_code'] : null
+            [$columns, $values] = buildInsertPayload($pdo, 'clients', [
+                'first_name' => $first_name,
+                'middle_name' => $middle_name,
+                'last_name' => $last_name,
+                'suffix' => $suffix,
+                'contact_no' => trim($_POST['contact_no']),
+                'email' => trim($_POST['email']),
+                'sex' => $_POST['sex'] ?? null,
+                'dob' => !empty($_POST['dob']) ? $_POST['dob'] : null,
+                'is_ofw' => isset($_POST['is_ofw']) ? 1 : 0,
+                'address1' => trim($_POST['address1']),
+                'region_code' => $_POST['region_code'] ?? '05',
+                'province_code' => $_POST['province_code'] ?? null,
+                'city_code' => !empty($_POST['city_code']) ? $_POST['city_code'] : null,
+                'barangay_code' => !empty($_POST['barangay_code']) ? $_POST['barangay_code'] : null
             ]);
-            $client_id = $pdo->lastInsertId();
+
+            if (!empty($columns)) {
+                $placeholders = implode(', ', array_fill(0, count($columns), '?'));
+                $stmt = $pdo->prepare("INSERT INTO clients (" . implode(', ', $columns) . ") VALUES (" . $placeholders . ")");
+                $stmt->execute($values);
+                $client_id = $pdo->lastInsertId();
+            }
         }
 
         // 2. Save OFW Information
@@ -58,21 +97,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $ofw_name = $is_ofw ? $full_name : $ofw_full_name;
         $relationship = $is_ofw ? 'Self' : trim($_POST['relationship']);
 
-        $stmt = $pdo->prepare("
-            INSERT INTO ofw_information (client_id, ofw_first_name, ofw_middle_name, ofw_last_name, ofw_suffix, ofw_name, country, employment_type, relationship)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        $stmt->execute([
-            $client_id,
-            $ofw_first_name,
-            $ofw_middle_name,
-            $ofw_last_name,
-            $ofw_suffix,
-            $ofw_name,
-            trim($_POST['country']),
-            $_POST['employment_type'],
-            $relationship
+        [$ofwColumns, $ofwValues] = buildInsertPayload($pdo, 'ofw_information', [
+            'client_id' => $client_id,
+            'ofw_first_name' => $ofw_first_name,
+            'ofw_middle_name' => $ofw_middle_name,
+            'ofw_last_name' => $ofw_last_name,
+            'ofw_suffix' => $ofw_suffix,
+            'ofw_name' => $ofw_name,
+            'country' => trim($_POST['country']),
+            'employment_type' => $_POST['employment_type'] ?? null,
+            'relationship' => $relationship
         ]);
+
+        if (!empty($ofwColumns)) {
+            $ofwPlaceholders = implode(', ', array_fill(0, count($ofwColumns), '?'));
+            $stmt = $pdo->prepare("INSERT INTO ofw_information (" . implode(', ', $ofwColumns) . ") VALUES (" . $ofwPlaceholders . ")");
+            $stmt->execute($ofwValues);
+        }
 
         // 3. Generate Ticket Number (e.g., PACD-2026-000123)
         $year = date('Y');
@@ -317,8 +358,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
               <div class="detail-panel">
                 <div class="two-col" style="padding: 8px 10px 0;">
                   <div class="detail-column">
-                    <div class="detail-row"><div class="detail-label">Last Name</div><input class="editable-form-field" type="text" name="last_name" id="last_name" data-field="last_name" placeholder="Last Name" required></div>
-                    <div class="detail-row"><div class="detail-label">First Name</div><input class="editable-form-field" type="text" name="first_name" id="first_name" data-field="first_name" placeholder="First Name" required></div>
+                    <div class="detail-row"><div class="detail-label">Last Name <span class="text-danger">*</span></div><input class="editable-form-field" type="text" name="last_name" id="last_name" data-field="last_name" placeholder="Last Name" required></div>
+                    <div class="detail-row"><div class="detail-label">First Name <span class="text-danger">*</span></div><input class="editable-form-field" type="text" name="first_name" id="first_name" data-field="first_name" placeholder="First Name" required></div>
                     <div class="detail-row"><div class="detail-label">Middle Name</div><input class="editable-form-field" type="text" name="middle_name" id="middle_name" data-field="middle_name" placeholder="Middle Name"></div>
                     <div class="detail-row"><div class="detail-label">Suffix</div><select class="editable-form-field" name="suffix" id="suffix" data-field="suffix"><option value="">--</option><option value="Jr.">Jr.</option><option value="Jra.">Jra.</option><option value="Sr.">Sr.</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option></select></div>
                     <div class="detail-row"><div class="detail-label">Contact Number</div><input class="editable-form-field" type="text" name="contact_no" id="contact_no" data-field="contact_no" placeholder="09XXXXXXXXX" required></div>
@@ -329,7 +370,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <div class="detail-row"><div class="detail-label">Date of Birth</div><input class="editable-form-field" type="date" name="dob" id="dob" data-field="dob"></div>
                     <div class="detail-row"><div class="detail-label">Address 1</div><input class="editable-form-field" type="text" name="address1" id="address1" data-field="address1" placeholder="House No., Street, Subdivision" required></div>
                     <div class="detail-row"><div class="detail-label">Region</div><select class="editable-form-field" name="region_code" id="region_code" data-field="region_name"><option value="">Loading Regions...</option></select></div>
-                    <div class="detail-row"><div class="detail-label">Province</div><select class="editable-form-field" name="province_code" id="province_code" data-field="province_name" required disabled><option value="">-- Select Province --</option></select></div>
+                    <div class="detail-row"><div class="detail-label">Province <span class="text-danger">*</span></div><select class="editable-form-field" name="province_code" id="province_code" data-field="province_name" required disabled><option value="">-- Select Province --</option></select></div>
                     <div class="detail-row"><div class="detail-label">Town / City</div><select class="editable-form-field" name="city_code" id="city_code" data-field="city_name" disabled><option value="">-- Select Town/City --</option></select></div>
                     <div class="detail-row"><div class="detail-label">Barangay</div><select class="editable-form-field" name="barangay_code" id="barangay_code" data-field="barangay_name" disabled><option value="">-- Select Barangay --</option></select></div>
                   </div>
@@ -352,7 +393,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <div class="detail-row"><div class="detail-label">Suffix</div><select class="editable-form-field" name="ofw_suffix" id="ofw_suffix" data-field="ofw_suffix"><option value="">--</option><option value="Jr.">Jr.</option><option value="Jra.">Jra.</option><option value="Sr.">Sr.</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option></select></div>
                   </div>
                   <div class="detail-column">
-                    <div id="relationship_wrapper" class="detail-row"><div class="detail-label">Relationship</div><select class="editable-form-field" name="relationship" id="relationship" data-field="relationship"><option value="">-- Select Relationship --</option><option value="Spouse">Spouse</option><option value="Child">Child</option><option value="Parent">Parent</option><option value="Sibling">Sibling</option><option value="Relative">Relative</option><option value="Representative">Representative</option></select></div>
+                    <div id="relationship_wrapper" class="detail-row"><div class="detail-label">Relationship</div><select class="editable-form-field" name="relationship" id="relationship" data-field="relationship"><option value="">-- Select Relationship --</option><option value="Self">Self</option><option value="Spouse">Spouse</option><option value="Child">Child</option><option value="Parent">Parent</option><option value="Sibling">Sibling</option><option value="Relative">Relative</option><option value="Representative">Representative</option></select></div>
                     <div class="detail-row"><div class="detail-label">Country</div><input class="editable-form-field" type="text" name="country" id="country" data-field="country" placeholder="e.g. Saudi Arabia, UAE, Singapore"></div>
                     <div class="detail-row"><div class="detail-label">Employment Type</div><select class="editable-form-field" name="employment_type" id="employment_type" data-field="employment_type"><option value="">-- Select Type --</option><option value="Land-based">Land-based</option><option value="Sea-based">Sea-based</option></select></div>
                   </div>
@@ -484,6 +525,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
       const ofwLastNameInput = document.getElementById('ofw_last_name');
       const ofwFirstNameInput = document.getElementById('ofw_first_name');
       const relationshipSelect = document.getElementById('relationship');
+      const clientForm = document.getElementById('client_form');
+
+      function validateRequiredFields() {
+        const firstName = document.getElementById('first_name').value.trim();
+        const lastName = document.getElementById('last_name').value.trim();
+        const provinceCode = document.getElementById('province_code').value.trim();
+
+        if (!firstName || !lastName || !provinceCode) {
+          alert('Please complete the required fields: First Name, Last Name, and Province.');
+          return false;
+        }
+
+        return true;
+      }
 
       function syncFieldValues() {
         const regionDisplay = document.getElementById('region_display');
@@ -535,17 +590,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         });
       }
 
+      function syncOfwNameFields() {
+        if (!isOfwCheckbox.checked) return;
+
+        const lastName = document.getElementById('last_name');
+        const firstName = document.getElementById('first_name');
+        const middleName = document.getElementById('middle_name');
+        const suffix = document.getElementById('suffix');
+
+        if (ofwLastNameInput && lastName) ofwLastNameInput.value = lastName.value;
+        if (ofwFirstNameInput && firstName) ofwFirstNameInput.value = firstName.value;
+        if (document.getElementById('ofw_middle_name') && middleName) document.getElementById('ofw_middle_name').value = middleName.value;
+        if (document.getElementById('ofw_suffix') && suffix) document.getElementById('ofw_suffix').value = suffix.value;
+      }
+
       function toggleOfwFields() {
         if (isOfwCheckbox.checked) {
-          if (relationshipWrapper) relationshipWrapper.style.display = 'none';
+          if (relationshipWrapper) relationshipWrapper.style.display = 'block';
+          if (relationshipSelect) {
+            relationshipSelect.value = 'Self';
+            relationshipSelect.setAttribute('required', 'required');
+          }
           if (ofwLastNameInput) ofwLastNameInput.removeAttribute('required');
           if (ofwFirstNameInput) ofwFirstNameInput.removeAttribute('required');
-          if (relationshipSelect) relationshipSelect.removeAttribute('required');
+          syncOfwNameFields();
         } else {
           if (relationshipWrapper) relationshipWrapper.style.display = 'block';
+          if (relationshipSelect) {
+            relationshipSelect.value = '';
+            relationshipSelect.setAttribute('required', 'required');
+          }
           if (ofwLastNameInput) ofwLastNameInput.setAttribute('required', 'required');
           if (ofwFirstNameInput) ofwFirstNameInput.setAttribute('required', 'required');
-          if (relationshipSelect) relationshipSelect.setAttribute('required', 'required');
         }
       }
 
@@ -553,11 +629,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         document.addEventListener(eventName, function (e) {
           if (e.target && e.target.id) {
             syncFieldValues();
+            if (isOfwCheckbox.checked && ['last_name', 'first_name', 'middle_name', 'suffix'].includes(e.target.id)) {
+              syncOfwNameFields();
+            }
           }
         });
       });
 
       isOfwCheckbox.addEventListener('change', toggleOfwFields);
+      clientForm.addEventListener('submit', function (event) {
+        if (!validateRequiredFields()) {
+          event.preventDefault();
+        }
+      });
       toggleOfwFields();
       syncFieldValues();
 

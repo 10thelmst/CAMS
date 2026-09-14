@@ -11,6 +11,33 @@ $title = 'Create Client';
 $active_page = 'create_client';
 ob_start();
 
+function getExistingTableColumns($pdo, $tableName) {
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM `{$tableName}`");
+        if (!$stmt) {
+            return [];
+        }
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    } catch (Exception $e) {
+        return [];
+    }
+}
+
+function buildInsertPayload($pdo, $tableName, $fields) {
+    $existingColumns = getExistingTableColumns($pdo, $tableName);
+    $columns = [];
+    $values = [];
+
+    foreach ($fields as $column => $value) {
+        if (in_array($column, $existingColumns, true)) {
+            $columns[] = $column;
+            $values[] = $value;
+        }
+    }
+
+    return [$columns, $values];
+}
+
 // Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_client_case') {
     try {
@@ -25,27 +52,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         // 1. Save or Update Client Information
         if (!$client_id) {
-            $stmt = $pdo->prepare("
-                INSERT INTO clients (first_name, middle_name, last_name, suffix, contact_no, email, sex, dob, is_ofw, address1, region_code, province_code, city_code, barangay_code)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ");
-            $stmt->execute([
-                $first_name,
-                $middle_name,
-                $last_name,
-                $suffix,
-                trim($_POST['contact_no']),
-                trim($_POST['email']),
-                $_POST['sex'] ?? null,
-                !empty($_POST['dob']) ? $_POST['dob'] : null,
-                isset($_POST['is_ofw']) ? 1 : 0,
-                trim($_POST['address1']),
-                $_POST['region_code'] ?? '05',
-                $_POST['province_code'] ?? null,
-                !empty($_POST['city_code']) ? $_POST['city_code'] : null,
-                !empty($_POST['barangay_code']) ? $_POST['barangay_code'] : null
+            [$columns, $values] = buildInsertPayload($pdo, 'clients', [
+                'first_name' => $first_name,
+                'middle_name' => $middle_name,
+                'last_name' => $last_name,
+                'suffix' => $suffix,
+                'contact_no' => trim($_POST['contact_no']),
+                'email' => trim($_POST['email']),
+                'sex' => $_POST['sex'] ?? null,
+                'dob' => !empty($_POST['dob']) ? $_POST['dob'] : null,
+                'is_ofw' => isset($_POST['is_ofw']) ? 1 : 0,
+                'address1' => trim($_POST['address1']),
+                'region_code' => $_POST['region_code'] ?? '05',
+                'province_code' => $_POST['province_code'] ?? null,
+                'city_code' => !empty($_POST['city_code']) ? $_POST['city_code'] : null,
+                'barangay_code' => !empty($_POST['barangay_code']) ? $_POST['barangay_code'] : null
             ]);
-            $client_id = $pdo->lastInsertId();
+
+            if (!empty($columns)) {
+                $placeholders = implode(', ', array_fill(0, count($columns), '?'));
+                $stmt = $pdo->prepare("INSERT INTO clients (" . implode(', ', $columns) . ") VALUES (" . $placeholders . ")");
+                $stmt->execute($values);
+                $client_id = $pdo->lastInsertId();
+            }
         }
 
         // 2. Save OFW Information
@@ -58,21 +87,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $ofw_name = $is_ofw ? $full_name : $ofw_full_name;
         $relationship = $is_ofw ? 'Self' : trim($_POST['relationship']);
 
-        $stmt = $pdo->prepare("
-            INSERT INTO ofw_information (client_id, ofw_first_name, ofw_middle_name, ofw_last_name, ofw_suffix, ofw_name, country, employment_type, relationship)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        $stmt->execute([
-            $client_id,
-            $ofw_first_name,
-            $ofw_middle_name,
-            $ofw_last_name,
-            $ofw_suffix,
-            $ofw_name,
-            trim($_POST['country']),
-            $_POST['employment_type'],
-            $relationship
+        [$ofwColumns, $ofwValues] = buildInsertPayload($pdo, 'ofw_information', [
+            'client_id' => $client_id,
+            'ofw_first_name' => $ofw_first_name,
+            'ofw_middle_name' => $ofw_middle_name,
+            'ofw_last_name' => $ofw_last_name,
+            'ofw_suffix' => $ofw_suffix,
+            'ofw_name' => $ofw_name,
+            'country' => trim($_POST['country']),
+            'employment_type' => $_POST['employment_type'] ?? null,
+            'relationship' => $relationship
         ]);
+
+        if (!empty($ofwColumns)) {
+            $ofwPlaceholders = implode(', ', array_fill(0, count($ofwColumns), '?'));
+            $stmt = $pdo->prepare("INSERT INTO ofw_information (" . implode(', ', $ofwColumns) . ") VALUES (" . $ofwPlaceholders . ")");
+            $stmt->execute($ofwValues);
+        }
 
         // 3. Generate Ticket Number (e.g., PACD-2026-000123)
         $year = date('Y');
