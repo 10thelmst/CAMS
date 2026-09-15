@@ -665,10 +665,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
       const searchTerm = document.getElementById('search_term');
       const searchResults = document.getElementById('search_results');
       const searchResultsBody = document.getElementById('search_results_body');
+      let liveSearchTimeout = null;
 
       function performSearch() {
         const term = searchTerm.value.trim();
-        if (term.length < 3) { alert('Please enter at least 3 characters to search.'); return; }
+        if (term.length < 2) {
+          searchResults.style.display = 'none';
+          searchResultsBody.innerHTML = '';
+          return;
+        }
+
         searchResultsBody.innerHTML = '<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> Searching...</td></tr>';
         searchResults.style.display = 'block';
 
@@ -708,9 +714,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
       }
 
       btnSearch.addEventListener('click', performSearch);
+      searchTerm.addEventListener('input', function () {
+        clearTimeout(liveSearchTimeout);
+        liveSearchTimeout = setTimeout(() => {
+          performSearch();
+        }, 300);
+      });
       searchTerm.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
           e.preventDefault();
+          clearTimeout(liveSearchTimeout);
           performSearch();
         }
       });
