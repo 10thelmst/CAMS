@@ -339,6 +339,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 </table>
               </div>
             </div>
+
+            <div id="client_history_panel" class="mt-3" style="display: none;">
+              <h6 style="font-size:12px; font-weight:700; color:#3c5372; margin-bottom:8px;">Selected Client History</h6>
+              <div class="table-responsive">
+                <table class="crm-table">
+                  <thead><tr><th>Client</th><th>Last Case</th><th>Status</th><th>History</th></tr></thead>
+                  <tbody id="client_history_body"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -665,7 +675,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
       const searchTerm = document.getElementById('search_term');
       const searchResults = document.getElementById('search_results');
       const searchResultsBody = document.getElementById('search_results_body');
+      const clientHistoryPanel = document.getElementById('client_history_panel');
+      const clientHistoryBody = document.getElementById('client_history_body');
       let liveSearchTimeout = null;
+
+      function renderClientHistory(data) {
+        if (!data || !data.ok) {
+          clientHistoryPanel.style.display = 'none';
+          clientHistoryBody.innerHTML = '';
+          return;
+        }
+
+        const client = data.client || {};
+        const cases = Array.isArray(data.cases) ? data.cases : [];
+        const clientName = escapeHtml(client.full_name || client.first_name + ' ' + client.last_name || 'Client');
+
+        if (!cases.length) {
+          clientHistoryBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No prior case history found for this client.</td></tr>`;
+          clientHistoryPanel.style.display = 'block';
+          return;
+        }
+
+        const latestCase = cases[0];
+        const lastCaseSubject = escapeHtml(latestCase.subject || 'No subject');
+        const lastCaseStatus = escapeHtml(latestCase.status || 'Open');
+        const historyCount = data.history_count || cases.length;
+
+        clientHistoryBody.innerHTML = `
+          <tr>
+            <td><strong>${clientName}</strong></td>
+            <td>${lastCaseSubject}</td>
+            <td><span class="crm-badge">${lastCaseStatus}</span></td>
+            <td>${historyCount} prior case(s)</td>
+          </tr>
+        `;
+        clientHistoryPanel.style.display = 'block';
+      }
+
+      function loadClientHistory(clientId) {
+        if (!clientId) {
+          clientHistoryPanel.style.display = 'none';
+          clientHistoryBody.innerHTML = '';
+          return;
+        }
+
+        fetch(`../auth/load_client_info.php?client_id=${encodeURIComponent(clientId)}`)
+          .then(res => res.json())
+          .then(data => renderClientHistory(data))
+          .catch(() => {
+            clientHistoryPanel.style.display = 'none';
+            clientHistoryBody.innerHTML = '';
+          });
+      }
 
       function performSearch() {
         const term = searchTerm.value.trim();
@@ -751,6 +812,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
           document.getElementById('selected_client_badge').style.display = 'inline-block';
           document.getElementById('btn_reset_client').style.display = 'inline-block';
+          loadClientHistory(btn.dataset.id);
           alert('Existing client selected! Fields locked to prevent accidental alteration.');
         }
       });
@@ -766,8 +828,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         document.getElementById('btn_reset_client').style.display = 'none';
       }
 
-      document.getElementById('btn_reset_client').addEventListener('click', unlockClientFields);
-      document.getElementById('btn_reset_form').addEventListener('click', unlockClientFields);
+      document.getElementById('btn_reset_client').addEventListener('click', function () {
+        unlockClientFields();
+        clientHistoryPanel.style.display = 'none';
+        clientHistoryBody.innerHTML = '';
+      });
+      document.getElementById('btn_reset_form').addEventListener('click', function () {
+        unlockClientFields();
+        clientHistoryPanel.style.display = 'none';
+        clientHistoryBody.innerHTML = '';
+      });
     });
   </script>
 </body>
