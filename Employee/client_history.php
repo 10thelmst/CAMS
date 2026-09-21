@@ -172,10 +172,10 @@ $status = $cases[0]['status'] ?? 'Open';
         </div>
 
         <div class="action-bar">
-          <button class="btn-mini primary" type="button">Back to Search</button>
-          <button class="btn-mini" type="button">Edit</button>
-          <button class="btn-mini" type="button">New Case</button>
-          <button class="btn-mini" type="button">Print</button>
+          <button class="btn-mini primary" type="button" onclick="window.history.back();">Back to Search</button>
+          <a href="edit_client.php?client_id=<?= htmlspecialchars($clientId, ENT_QUOTES) ?>" class="btn-mini" role="button">Edit</a>
+          <a href="create_client.php?existing_client_id=<?= htmlspecialchars($clientId, ENT_QUOTES) ?>" class="btn-mini" role="button">New Case</a>
+          <button class="btn-mini" type="button" onclick="window.print();">Print</button>
         </div>
 
         <div class="content">
