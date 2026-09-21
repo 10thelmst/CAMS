@@ -72,6 +72,11 @@ try {
     $caseStmt->execute([':client_id' => $clientId]);
     $cases = $caseStmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Load OFW information (if any) for the client so UIs can prefill OFW fields
+    $ofwStmt = $pdo->prepare("SELECT ofw_first_name, ofw_middle_name, ofw_last_name, ofw_suffix, ofw_name, country, employment_type, relationship FROM ofw_information WHERE client_id = :client_id LIMIT 1");
+    $ofwStmt->execute([':client_id' => $clientId]);
+    $ofwInfo = $ofwStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
     foreach ($cases as &$caseRow) {
         foreach ($caseRow as $key => $value) {
             if ($value === null) {
@@ -92,7 +97,7 @@ try {
 
     $response = [
         'ok' => true,
-        'client' => $client,
+        'client' => array_merge($client, $ofwInfo),
         'cases' => $cases,
         'history_count' => count($cases)
     ];

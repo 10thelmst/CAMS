@@ -13,8 +13,9 @@ if ($clientId <= 0) {
     exit;
 }
 
-// Handle POST update
+// Handle POST update (returns JSON for AJAX requests)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_client') {
+    header('Content-Type: application/json; charset=utf-8');
     try {
         $first_name = trim($_POST['first_name'] ?? '');
         $middle_name = trim($_POST['middle_name'] ?? '');
@@ -46,11 +47,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             ':id' => $clientId
         ]);
 
-        $message = 'Client record updated successfully.';
-        $message_type = 'success';
+        echo json_encode(['ok' => true, 'message' => 'Client record updated successfully.']);
+        exit;
     } catch (Throwable $e) {
-        $message = 'Failed to update client: ' . $e->getMessage();
-        $message_type = 'danger';
+        echo json_encode(['ok' => false, 'message' => 'Failed to update client: ' . $e->getMessage()]);
+        exit;
     }
 }
 
