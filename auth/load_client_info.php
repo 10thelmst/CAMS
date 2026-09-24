@@ -1,21 +1,37 @@
 <?php
-require_once __DIR__ . '/../auth/auth_check.php';
 require_once __DIR__ . '/../config/database.php';
 
 header('Content-Type: application/json; charset=utf-8');
+
+// If this endpoint is called via AJAX, return JSON for auth failures instead of redirecting.
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['email'])) {
+    http_response_code(401);
+    echo json_encode([
+        'ok' => false,
+        'message' => 'Not authenticated. Please log in.'
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 try {
     $pdo = get_cams_pdo();
     $clientId = isset($_GET['client_id']) ? (int) $_GET['client_id'] : 0;
 
-    if ($clientId <= 0) {
-        http_response_code(400);
-        echo json_encode([
-            'ok' => false,
-            'message' => 'Client ID is required.'
-        ], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
+        $debug = isset($_GET['debug']) && $_GET['debug'] == '1';
+
+        if ($clientId <= 0) {
+            http_response_code(400);
+            $resp = [
+                'ok' => false,
+                'message' => 'Client ID is required.'
+            ];
+            if ($debug) $resp['debug'] = ['get' => $_GET, 'session' => $_SESSION ?? null];
+            echo json_encode($resp, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
 
     $clientColumns = $pdo->query('SHOW COLUMNS FROM clients')->fetchAll(PDO::FETCH_COLUMN);
     $concernColumns = $pdo->query('SHOW COLUMNS FROM concerns')->fetchAll(PDO::FETCH_COLUMN);
@@ -58,10 +74,9 @@ try {
     $client = $clientStmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$client) {
-        echo json_encode([
-            'ok' => false,
-            'message' => 'Client not found.'
-        ], JSON_UNESCAPED_UNICODE);
+        $resp = [ 'ok' => false, 'message' => 'Client not found.' ];
+        if ($debug) $resp['debug'] = ['get' => $_GET, 'session' => $_SESSION ?? null];
+        echo json_encode($resp, JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -73,9 +88,22 @@ try {
     $cases = $caseStmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Load OFW information (if any) for the client so UIs can prefill OFW fields
-    $ofwStmt = $pdo->prepare("SELECT ofw_first_name, ofw_middle_name, ofw_last_name, ofw_suffix, ofw_name, country, employment_type, relationship FROM ofw_information WHERE client_id = :client_id LIMIT 1");
-    $ofwStmt->execute([':client_id' => $clientId]);
-    $ofwInfo = $ofwStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    $ofwInfo = [];
+    try {
+        // Check which columns actually exist in the ofw_information table
+        $ofwCols = $pdo->query('SHOW COLUMNS FROM ofw_information')->fetchAll(PDO::FETCH_COLUMN);
+        $wanted = ['ofw_first_name', 'ofw_middle_name', 'ofw_last_name', 'ofw_suffix', 'ofw_name', 'country', 'employment_type', 'relationship'];
+        $selectCols = array_values(array_intersect($wanted, $ofwCols));
+        if (!empty($selectCols)) {
+            $selectList = implode(', ', array_map(function($c){ return $c; }, $selectCols));
+            $ofwStmt = $pdo->prepare("SELECT {$selectList} FROM ofw_information WHERE client_id = :client_id LIMIT 1");
+            $ofwStmt->execute([':client_id' => $clientId]);
+            $ofwInfo = $ofwStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        }
+    } catch (Throwable $e) {
+        // If the table or columns don't exist, continue silently with empty OFW info
+        $ofwInfo = [];
+    }
 
     foreach ($cases as &$caseRow) {
         foreach ($caseRow as $key => $value) {
@@ -101,6 +129,7 @@ try {
         'cases' => $cases,
         'history_count' => count($cases)
     ];
+    if ($debug) $response['debug'] = ['get' => $_GET, 'session' => $_SESSION ?? null];
 
     echo json_encode($response, JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {

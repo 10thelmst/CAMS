@@ -60,9 +60,174 @@ $status = $cases[0]['status'] ?? 'Open';
       color: #2b2f36;
     }
     .crm-shell {
-      </script>
-    </body>
-    </html>
+      width: 100%; min-height: 100vh; background: #dfe7f4;
+    }
+    .topbar {
+      height: 52px;
+      background: linear-gradient(#f5f5f5, #dfdfdf);
+      border-bottom: 1px solid #bcc8d8;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      font-size: 12px;
+    }
+    .oracle-brand {
+      display: flex; align-items: center; font-weight: 700; color: #1e2a54; letter-spacing: 0.02em;
+    }
+    .oracle-mark {
+      width: 26px; height: 26px; background: #d11c22; color: #fff; display: flex;
+      align-items: center; justify-content: center; border-radius: 3px; margin-right: 8px; font-size: 18px; line-height: 1;
+    }
+    .crm-word { font-weight: 700; color: #2d3d69; }
+    .top-links { display: flex; align-items: center; gap: 12px; color: #4b5e80; }
+    .layout { display: flex; min-height: calc(100vh - 52px); }
+    .sidebar { width: 220px; background: #dfeaf6; border-right: 1px solid #bfcfe0; }
+    .nav-section { padding: 10px 8px 0; }
+    .nav-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin: 2px 0; border-radius: 4px; color: #1f2f46; font-size: 12px; font-weight: 600; }
+    .nav-item i { width: 16px; text-align: center; color: #41628d; }
+    .nav-item.active { background: #c9d9ef; border: 1px solid #9db7d6; }
+    .nav-item.small { padding-left: 26px; font-weight: 500; }
+    .main { flex: 1; background: #edf2f8; }
+    .main-strip {
+      background: linear-gradient(#edf2f7, #e5edf6);
+      border-bottom: 1px solid #cad8eb;
+      padding: 12px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+    }
+    .breadcrumb-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #45607f; font-weight: 600; }
+    .page-title { font-size: 18px; font-weight: 700; color: #1e2f53; }
+    .action-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 14px 0; }
+    .btn-mini { border: 1px solid #a9b8d0; background: linear-gradient(#f4f8ff, #dfeaf8); color: #224065; padding: 5px 10px; border-radius: 3px; font-size: 12px; font-weight: 600; line-height: 1.2; }
+    .btn-mini.primary { background: linear-gradient(#edf6ff, #d0e1f7); }
+    .content { padding: 10px 14px 20px; }
+    .lead-detail { background: #edf4fb; border: 1px solid #cbd8eb; border-radius: 3px; }
+    .detail-header { background: linear-gradient(#edf7ff, #dfeefa); border-bottom: 1px solid #c8d9ee; padding: 8px 12px; font-size: 13px; font-weight: 700; color: #3c5575; }
+    .detail-body { background: #fff; padding: 12px; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+    .field-row { display: flex; align-items: center; min-height: 32px; border-bottom: 1px solid #e7eef8; }
+    .field-row:last-child { border-bottom: none; }
+    .field-label { width: 160px; font-size: 12px; color: #536d8d; font-weight: 700; padding-right: 10px; text-align: right; }
+    .field-value { flex: 1; font-size: 12px; color: #1e2d3d; background: #fff; border-bottom: 1px solid #d6e1ef; padding: 0 4px 2px; min-height: 22px; }
+    .panel { margin-top: 14px; background: #f3f7fb; border: 1px solid #cedbeb; border-radius: 3px; }
+    .panel-title { background: linear-gradient(#edf6ff, #e1ebf9); border-bottom: 1px solid #c8d9ee; padding: 8px 12px; font-size: 13px; font-weight: 700; color: #3a4e6b; }
+    .panel-body { background: #fff; padding: 10px 12px; }
+    .mini-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .mini-table th { background: #eaf1f9; color: #2b405f; font-weight: 700; border-bottom: 1px solid #d4e0f0; padding: 7px 8px; text-align: left; }
+    .mini-table td { border-bottom: 1px solid #edf1f6; padding: 7px 8px; color: #273650; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 999px; background: #dbeafc; color: #33536b; font-size: 11px; font-weight: 700; }
+    .status-open { background: #dfeef9; color: #224a6b; }
+    .status-closed { background: #dfe8d8; color: #285b31; }
+    @media (max-width: 980px) { .layout { display: block; } .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #bfcfe0; } .field-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="crm-shell">
+    <div class="topbar">
+      <div class="oracle-brand"><div class="oracle-mark">O</div><div>RACLE <span class="crm-word">CRM On Demand</span></div></div>
+      <div class="top-links"><span>Training and Support</span><span>|</span><span>Admin</span><span>|</span><span>My Setup</span><span>|</span><span>Deleted Items</span><span>|</span><span>Help</span><span>|</span><span>Sign Out</span></div>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="nav-section">
+          <div class="nav-item active"><i class="fas fa-envelope"></i> Message Center</div>
+          <div class="nav-item"><i class="fas fa-envelope-open-text"></i> 0 New Messages</div>
+          <div class="nav-item"><i class="fas fa-search"></i> Search</div>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-item"><i class="fas fa-user-friends"></i> Contacts</div>
+          <div class="nav-item small">All</div>
+          <div class="nav-item small">Last Name</div>
+          <div class="nav-item small">First Name</div>
+          <div class="nav-item small">Email</div>
+          <div class="nav-item small">Cellular Phone #</div>
+          <div class="nav-item small">Contact City</div>
+          <div class="nav-item" style="margin-top:8px;"><i class="fas fa-plus"></i> Create</div>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-item"><i class="fas fa-user-circle"></i> Account</div>
+          <div class="nav-item"><i class="fas fa-calendar-check"></i> Appointment</div>
+          <div class="nav-item"><i class="fas fa-address-book"></i> Contact</div>
+          <div class="nav-item"><i class="fas fa-dollar-sign"></i> Expense</div>
+          <div class="nav-item"><i class="fas fa-file-alt"></i> Lead</div>
+          <div class="nav-item"><i class="fas fa-briefcase"></i> Opportunity</div>
+          <div class="nav-item"><i class="fas fa-handshake"></i> Service Request</div>
+          <div class="nav-item"><i class="fas fa-cube"></i> Solution</div>
+          <div class="nav-item"><i class="fas fa-check-square"></i> Task</div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="main-strip">
+          <div class="breadcrumb-row">
+            <span class="page-title"><i class="fas fa-user"></i> Client History</span>
+            <span>|</span>
+            <span>Client Detail</span>
+          </div>
+        </div>
+
+        <div class="action-bar">
+          <button class="btn-mini primary" type="button" onclick="window.history.back();">Back to Search</button>
+          <button id="btn_edit_client" class="btn-mini" type="button" data-client-id="<?= htmlspecialchars($clientId, ENT_QUOTES) ?>">Edit</button>
+          <a href="create_client2.php?existing_client_id=<?= htmlspecialchars($clientId, ENT_QUOTES) ?>" class="btn-mini" role="button">New Case</a>
+          <button class="btn-mini" type="button" onclick="window.print();">Print</button>
+        </div>
+
+        <div class="content">
+          <?php if (!$client): ?>
+            <div class="panel">
+              <div class="panel-title">Client Record Not Found</div>
+              <div class="panel-body">
+                <p class="mb-0">No client record was found for this client ID.</p>
+              </div>
+            </div>
+          <?php else: ?>
+            <div class="lead-detail">
+              <div class="detail-header">Lead Detail: <?= safeValue($fullName) ?> | <?= safeValue($subject) ?></div>
+              <div class="detail-body">
+                <div class="field-grid">
+                  <div>
+                    <div class="field-row"><div class="field-label">Client ID</div><div class="field-value"><?= safeValue($client['id'] ?? '') ?></div></div>
+                    <div class="field-row"><div class="field-label">First Name</div><div class="field-value"><?= safeValue($client['first_name'] ?? '') ?></div></div>
+                    <div class="field-row"><div class="field-label">Middle Name</div><div class="field-value"><?= safeValue($client['middle_name'] ?? '') ?></div></div>
+                    <div class="field-row"><div class="field-label">Last Name</div><div class="field-value"><?= safeValue($client['last_name'] ?? '') ?></div></div>
+                    <div class="field-row"><div class="field-label">Suffix</div><div class="field-value"><?= safeValue($client['suffix'] ?? '') ?></div></div>
+                    <div class="field-row"><div class="field-label">Contact Number</div><div class="field-value"><?= safeValue($client['contact_no'] ?? '') ?></div></div>
+                    <div class="field-row"><div class="field-label">Gender</div><div class="field-value"><?= safeValue($client['sex'] ?? '') ?></div></div>
+                  </div>
+                  <div>
+                    <div class="field-row"><div class="field-label">Email</div><div class="field-value"><?= safeValue($client['email'] ?? '') ?></div></div>
+                    <div class="field-row"><div class="field-label">Date of Birth</div><div class="field-value"><?= safeValue($client['dob'] ?? '') ?></div></div>
+                    <div class="field-row"><div class="field-label">Address</div><div class="field-value"><?= safeValue($client['address1'] ?? '') ?></div></div>
+                    <div class="field-row"><div class="field-label">Province</div><div class="field-value"><?= safeValue($client['province_code'] ?? '') ?></div></div>
+                    <div class="field-row"><div class="field-label">City</div><div class="field-value"><?= safeValue($client['city_code'] ?? '') ?></div></div>
+                    <div class="field-row"><div class="field-label">Barangay</div><div class="field-value"><?= safeValue($client['barangay_code'] ?? '') ?></div></div>
+                    <div class="field-row"><div class="field-label">Current Case Status</div><div class="field-value"><span class="badge status-open"><?= safeValue($status) ?></span></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-title">Case History</div>
+              <div class="panel-body">
+                <table class="mini-table">
+                  <thead>
+                    <tr>
+                      <th>Ticket</th>
+                      <th>Subject</th>
+                      <th>Status</th>
+                      <th>Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php if (empty($cases)): ?>
+                      <tr><td colspan="4">No case history found for this client.</td></tr>
+                    <?php else: ?>
                       <?php foreach ($cases as $caseRow): ?>
                         <tr>
                           <td><?= safeValue($caseRow['ticket_number'] ?? '') ?></td>
@@ -114,16 +279,90 @@ $status = $cases[0]['status'] ?? 'Open';
     </div>
   </div>
 
-  <!-- Edit client popup modal (loads edit_client.php in iframe) -->
+  <!-- Edit client popup modal (simplified AJAX form) -->
   <div class="modal fade" id="editClientModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header bg-primary text-white">
           <h5 class="modal-title">Edit Client</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         </div>
-        <div class="modal-body p-0">
-          <iframe id="editClientIframe" src="about:blank" style="width:100%;height:70vh;border:0;"></iframe>
+        <div class="modal-body">
+          <div id="editClientAlert"></div>
+          <form id="editClientForm">
+            <input type="hidden" name="client_id" id="client_id_field" value="">
+            <div class="form-group">
+              <label for="first_name_field">First Name</label>
+              <input class="form-control" name="first_name" id="first_name_field">
+            </div>
+            <div class="form-group">
+              <label for="last_name_field">Last Name</label>
+              <input class="form-control" name="last_name" id="last_name_field">
+            </div>
+            <div class="form-group">
+              <label for="contact_no_field">Contact Number</label>
+              <input class="form-control" name="contact_no" id="contact_no_field">
+            </div>
+            <div class="form-group">
+              <label for="email_field">Email</label>
+              <input class="form-control" name="email" id="email_field" type="email">
+            </div>
+            <div class="form-group">
+              <label for="address1_field">Address</label>
+              <input class="form-control" name="address1" id="address1_field">
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-4">
+                <label for="region_code_field">Region</label>
+                <input class="form-control" name="region_code" id="region_code_field">
+              </div>
+              <div class="form-group col-md-4">
+                <label for="province_code_field">Province</label>
+                <input class="form-control" name="province_code" id="province_code_field">
+              </div>
+              <div class="form-group col-md-4">
+                <label for="city_code_field">Municipality / City</label>
+                <input class="form-control" name="city_code" id="city_code_field">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="barangay_code_field">Barangay</label>
+                <input class="form-control" name="barangay_code" id="barangay_code_field">
+              </div>
+              <div class="form-group col-md-6">
+                <div class="form-check" style="margin-top:32px;">
+                  <input class="form-check-input" type="checkbox" name="is_ofw" id="is_ofw_field" value="1">
+                  <label class="form-check-label" for="is_ofw_field">Is OFW</label>
+                </div>
+              </div>
+            </div>
+
+            <hr>
+            <h6>OFW Information</h6>
+            <div class="form-group">
+              <label for="ofw_name_field">OFW Full Name</label>
+              <input class="form-control" name="ofw_name" id="ofw_name_field">
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-4">
+                <label for="ofw_country_field">Country</label>
+                <input class="form-control" name="country" id="ofw_country_field">
+              </div>
+              <div class="form-group col-md-4">
+                <label for="ofw_employment_type_field">Employment Type</label>
+                <input class="form-control" name="employment_type" id="ofw_employment_type_field">
+              </div>
+              <div class="form-group col-md-4">
+                <label for="ofw_relationship_field">Relationship</label>
+                <input class="form-control" name="relationship" id="ofw_relationship_field">
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+          <button type="button" id="saveEditClientBtn" class="btn btn-primary btn-sm">Save</button>
         </div>
       </div>
     </div>
@@ -132,181 +371,111 @@ $status = $cases[0]['status'] ?? 'Open';
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', function(){
-      var btn = document.getElementById('btn_edit_client');
-      if (!btn) return;
-      btn.addEventListener('click', function(){
-        var id = this.dataset.clientId || '<?= htmlspecialchars($clientId, ENT_QUOTES) ?>';
-        var iframe = document.getElementById('editClientIframe');
-        iframe.src = 'edit_client.php?client_id=' + encodeURIComponent(id) + '&modal=1';
-        var modal = new bootstrap.Modal(document.getElementById('editClientModal'));
-        modal.show();
+    $(function(){
+      var $btn = $('#btn_edit_client');
+      if (!$btn.length) return;
+
+      $btn.on('click', function(){
+        var id = $(this).data('client-id') || '<?= htmlspecialchars($clientId, ENT_QUOTES) ?>';
+        $('#editClientForm')[0].reset();
+        console.log('Edit button clicked for client id=', id);
+
+        // validate id
+        if (!id || parseInt(id) <= 0) {
+          $('#editClientAlert').html('<div class="alert alert-warning">No client selected for editing.</div>');
+          $('#editClientModal').modal('show');
+          return;
+        }
+
+        // show modal immediately so user sees response
+        $('#editClientAlert').html('<div class="text-center">Loading...</div>');
+        $('#editClientModal').modal('show');
+
+        // fetch with timeout to avoid indefinite loading
+        var controller = new AbortController();
+        var timeout = setTimeout(function(){ controller.abort(); $('#editClientAlert').html('<div class="alert alert-warning">Load timed out.</div>'); }, 8000);
+
+        fetch('../auth/load_client_info.php?client_id=' + encodeURIComponent(id) + '&debug=1', { signal: controller.signal })
+          .then(function(r){
+            clearTimeout(timeout);
+            return r.text().then(function(txt){
+              // try parse JSON, otherwise show raw text for debugging
+              try {
+                var data = JSON.parse(txt);
+                return { ok: true, data: data };
+              } catch (e) {
+                return { ok: false, text: txt };
+              }
+            });
+          })
+          .then(function(result){
+            if (!result.ok) {
+              console.error('Non-JSON response from load_client_info:', result.text);
+              $('#editClientAlert').html('<div class="alert alert-danger">Server response:\n<pre style="white-space:pre-wrap">'+escapeHtml(result.text.substring(0,2000))+'</pre></div>');
+              return;
+            }
+            var data = result.data;
+            console.log('load_client_info response:', data);
+            if (!data || !data.client){
+              var pretty = '';
+              try { pretty = JSON.stringify(data, null, 2); } catch(e){ pretty = String(data); }
+              $('#editClientAlert').html('<div class="alert alert-danger">Failed to load client data (no client in JSON). See response below:<pre style="white-space:pre-wrap">'+escapeHtml(pretty)+'</pre></div>');
+              console.error('load_client_info returned no client', data);
+              return;
+            }
+            var c = data.client;
+            $('#client_id_field').val(c.id || '');
+            $('#first_name_field').val(c.first_name || '');
+            $('#last_name_field').val(c.last_name || '');
+            $('#contact_no_field').val(c.contact_no || '');
+            $('#email_field').val(c.email || '');
+            $('#address1_field').val(c.address1 || '');
+            $('#region_code_field').val(c.region_code || '');
+            $('#province_code_field').val(c.province_code || '');
+            $('#city_code_field').val(c.city_code || '');
+            $('#barangay_code_field').val(c.barangay_code || '');
+            if (parseInt(c.is_ofw || 0) === 1) $('#is_ofw_field').prop('checked', true); else $('#is_ofw_field').prop('checked', false);
+
+            // OFW fields (may be absent)
+            $('#ofw_name_field').val(c.ofw_name || '');
+            $('#ofw_country_field').val(c.country || '');
+            $('#ofw_employment_type_field').val(c.employment_type || '');
+            $('#ofw_relationship_field').val(c.relationship || '');
+            $('#editClientAlert').html('');
+          })
+          .catch(function(err){
+            console.error('Error loading client:', err);
+            if (err.name === 'AbortError') {
+              $('#editClientAlert').html('<div class="alert alert-warning">Request aborted (timeout).</div>');
+            } else {
+              $('#editClientAlert').html('<div class="alert alert-danger">Failed to load client data.</div>');
+            }
+          });
+      });
+
+      $('#saveEditClientBtn').on('click', function(){
+        var form = document.getElementById('editClientForm');
+        if (!form) return;
+        var fd = new FormData(form);
+        fd.append('action','update_client');
+        $('#saveEditClientBtn').prop('disabled', true).text('Saving...');
+
+        fetch('edit_client.php', { method: 'POST', body: fd })
+          .then(r => r.json())
+          .then(resp => {
+            $('#saveEditClientBtn').prop('disabled', false).text('Save');
+            if (resp.ok){
+              $('#editClientModal').modal('hide');
+              location.reload();
+              return;
+            }
+            $('#editClientAlert').html('<div class="alert alert-danger">'+(resp.message||'Update failed')+'</div>');
+          }).catch(()=>{
+            $('#saveEditClientBtn').prop('disabled', false).text('Save');
+            $('#editClientAlert').html('<div class="alert alert-danger">Request failed.</div>');
+          });
       });
     });
   </script>
 </body>
 </html>
-                if (!data.ok){ body.innerHTML = '<div class="alert alert-danger">'+escapeHtml(data.message||'Failed to load')+'</div>'; return; }
-                var c = data.client || {};
-                body.innerHTML = `
-                  <form id="editClientForm">
-                    <input type="hidden" name="client_id" value="${escapeHtml(c.id||'')}">
-
-                    <div class="panel-wrap">
-                      <div class="panel-title">Edit: Client Personal Details</div>
-                      <div class="panel-body">
-                        <div class="detail-panel">
-                          <div class="two-col" style="padding:8px 10px 0;">
-                            <div class="detail-column">
-                              <div class="detail-row"><div class="detail-label">Last Name <span class="text-danger">*</span></div><input class="editable-form-field" name="last_name" id="last_name_modal" value="${escapeHtml(c.last_name||'')}"></div>
-                              <div class="detail-row"><div class="detail-label">First Name <span class="text-danger">*</span></div><input class="editable-form-field" name="first_name" id="first_name_modal" value="${escapeHtml(c.first_name||'')}"></div>
-                              <div class="detail-row"><div class="detail-label">Middle Name</div><input class="editable-form-field" name="middle_name" id="middle_name_modal" value="${escapeHtml(c.middle_name||'')}"></div>
-                              <div class="detail-row"><div class="detail-label">Suffix</div><select class="editable-form-field" name="suffix" id="suffix_modal"><option value="">--</option><option value="Jr.">Jr.</option><option value="Jra.">Jra.</option><option value="Sr.">Sr.</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option></select></div>
-                              <div class="detail-row"><div class="detail-label">Contact Number</div><input class="editable-form-field" name="contact_no" id="contact_no_modal" value="${escapeHtml(c.contact_no||'')}"></div>
-                              <div class="detail-row"><div class="detail-label">Gender</div><select class="editable-form-field" name="sex" id="sex_modal"><option value="">--</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
-                            </div>
-                            <div class="detail-column">
-                              <div class="detail-row"><div class="detail-label">Email Address</div><input class="editable-form-field" type="email" name="email" id="email_modal" value="${escapeHtml(c.email||'')}"></div>
-                              <div class="detail-row"><div class="detail-label">Date of Birth</div><input class="editable-form-field" type="date" name="dob" id="dob_modal" value="${escapeHtml(c.dob||'')}"></div>
-                              <div class="detail-row"><div class="detail-label">Address 1</div><input class="editable-form-field" name="address1" id="address1_modal" value="${escapeHtml(c.address1||'')}"></div>
-                              <div class="detail-row"><div class="detail-label">Region</div><select class="editable-form-field" name="region_code" id="region_code_modal"><option>Loading...</option></select></div>
-                              <div class="detail-row"><div class="detail-label">Province</div><select class="editable-form-field" name="province_code" id="province_code_modal" required disabled><option value="">-- Select Province --</option></select></div>
-                              <div class="detail-row"><div class="detail-label">Town / City</div><select class="editable-form-field" name="city_code" id="city_code_modal" disabled><option value="">-- Select Town/City --</option></select></div>
-                              <div class="detail-row"><div class="detail-label">Barangay</div><select class="editable-form-field" name="barangay_code" id="barangay_code_modal" disabled><option value="">-- Select Barangay --</option></select></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="panel-wrap mt-2">
-                      <div class="panel-title">OFW Information</div>
-                      <div class="panel-body">
-                        <label class="crm-check"><input type="checkbox" id="is_ofw_modal" name="is_ofw" value="1"> <span>Client is the OFW himself/herself</span></label>
-                        <div class="detail-panel">
-                          <div class="two-col" style="padding:8px 10px 0;">
-                            <div class="detail-column">
-                              <div class="detail-row"><div class="detail-label">OFW Last Name</div><input class="editable-form-field" name="ofw_last_name" id="ofw_last_name_modal" value="${escapeHtml(c.ofw_last_name||'')}"></div>
-                              <div class="detail-row"><div class="detail-label">OFW First Name</div><input class="editable-form-field" name="ofw_first_name" id="ofw_first_name_modal" value="${escapeHtml(c.ofw_first_name||'')}"></div>
-                              <div class="detail-row"><div class="detail-label">OFW Middle Name</div><input class="editable-form-field" name="ofw_middle_name" id="ofw_middle_name_modal" value="${escapeHtml(c.ofw_middle_name||'')}"></div>
-                            </div>
-                            <div class="detail-column">
-                              <div class="detail-row"><div class="detail-label">Relationship</div><select class="editable-form-field" name="relationship" id="relationship_modal"><option value="">-- Select Relationship --</option><option value="Self">Self</option><option value="Spouse">Spouse</option><option value="Child">Child</option><option value="Parent">Parent</option><option value="Sibling">Sibling</option><option value="Relative">Relative</option><option value="Representative">Representative</option></select></div>
-                              <div class="detail-row"><div class="detail-label">Country</div><input class="editable-form-field" name="country" id="country_modal" value="${escapeHtml(c.country||'')}"></div>
-                              <div class="detail-row"><div class="detail-label">Employment Type</div><select class="editable-form-field" name="employment_type" id="employment_type_modal"><option value="">-- Select Type --</option><option value="Land-based">Land-based</option><option value="Sea-based">Sea-based</option></select></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </form>
-                `;
-
-                // After injecting form, initialize selects and values
-                function loadRegionsModal() {
-                  fetch('../auth/ajax_address_json.php?action=get_regions')
-                    .then(r=>r.json())
-                    .then(regions=>{
-                      var rs = document.getElementById('region_code_modal'); rs.innerHTML='';
-                      regions.forEach(r=>{ var sel = (r.code=== (c.region_code||'05')) ? 'selected' : ''; rs.innerHTML += `<option value="${r.code}" ${sel}>${escapeHtml(r.name)}</option>`; });
-                      var regionVal = document.getElementById('region_code_modal').value || '05';
-                      loadProvincesModal(regionVal);
-                    }).catch(()=>{});
-                }
-
-                function loadProvincesModal(region_code) {
-                  var prov = document.getElementById('province_code_modal'); prov.innerHTML = '<option value="">-- Select Province --</option>';
-                  prov.disabled = true;
-                  fetch(`../auth/ajax_address_json.php?action=get_provinces&region_code=${region_code}`)
-                    .then(r=>r.json()).then(list=>{
-                      list.forEach(p=>{ prov.innerHTML += `<option value="${p.code}" ${p.code=== (c.province_code||'') ? 'selected' : ''}>${escapeHtml(p.name)}</option>`; });
-                      prov.disabled = false;
-                      if (c.province_code) loadCitiesModal(c.province_code); else { document.getElementById('city_code_modal').innerHTML='<option value="">-- Select Town/City --</option>'; document.getElementById('barangay_code_modal').innerHTML='<option value="">-- Select Barangay --</option>'; }
-                    }).catch(()=>{});
-                }
-
-                function loadCitiesModal(province_code) {
-                  var city = document.getElementById('city_code_modal'); city.innerHTML = '<option value="">-- Select Town/City --</option>'; city.disabled = true;
-                  fetch(`../auth/ajax_address_json.php?action=get_cities&province_code=${province_code}`).then(r=>r.json()).then(list=>{
-                    list.forEach(cc=>{ city.innerHTML += `<option value="${cc.code}" ${cc.code=== (c.city_code||'') ? 'selected' : ''}>${escapeHtml(cc.name)}</option>`; });
-                    city.disabled = false;
-                    if (c.city_code) loadBarangaysModal(c.city_code);
-                  }).catch(()=>{});
-                }
-
-                function loadBarangaysModal(city_code) {
-                  var brgy = document.getElementById('barangay_code_modal'); brgy.innerHTML = '<option value="">-- Select Barangay --</option>'; brgy.disabled = true;
-                  fetch(`../auth/ajax_address_json.php?action=get_barangays&city_code=${city_code}`).then(r=>r.json()).then(list=>{
-                    list.forEach(b=>{ brgy.innerHTML += `<option value="${b.code}" ${b.code=== (c.barangay_code||'') ? 'selected' : ''}>${escapeHtml(b.name)}</option>`; });
-                    brgy.disabled = false;
-                  }).catch(()=>{});
-                }
-
-                // wire up change handlers
-                document.getElementById('region_code_modal').addEventListener('change', function(){ loadProvincesModal(this.value); });
-                document.getElementById('province_code_modal').addEventListener('change', function(){ document.getElementById('city_code_modal').innerHTML='<option value="">-- Select Town/City --</option>'; document.getElementById('barangay_code_modal').innerHTML='<option value="">-- Select Barangay --</option>'; if (this.value) loadCitiesModal(this.value); });
-                document.getElementById('city_code_modal').addEventListener('change', function(){ document.getElementById('barangay_code_modal').innerHTML='<option value="">-- Select Barangay --</option>'; if (this.value) loadBarangaysModal(this.value); });
-
-                // set simple selects
-                document.getElementById('suffix_modal').value = c.suffix || '';
-                document.getElementById('sex_modal').value = c.sex || '';
-                document.getElementById('relationship_modal').value = c.relationship || '';
-                document.getElementById('employment_type_modal').value = c.employment_type || '';
-
-                // OFW toggle
-                var isOfwCb = document.getElementById('is_ofw_modal');
-                if (isOfwCb) {
-                  isOfwCb.checked = !!c.is_ofw;
-                  function toggleOfwModal(){
-                    var display = isOfwCb.checked ? false : true;
-                    document.getElementById('ofw_last_name_modal').required = !isOfwCb.checked;
-                    document.getElementById('ofw_first_name_modal').required = !isOfwCb.checked;
-                  }
-                  isOfwCb.addEventListener('change', toggleOfwModal);
-                  toggleOfwModal();
-                }
-
-                // initialize region/province/city/barangay lists
-                loadRegionsModal();
-              })
-              .catch(()=>{ body.innerHTML = '<div class="alert alert-danger">Failed to load client details.</div>'; });
-          });
-
-          document.getElementById('saveEditClientBtn').addEventListener('click', function(){
-            var form = document.getElementById('editClientForm');
-            if (!form) return;
-            var fd = new FormData(form);
-            fd.append('action','update_client');
-
-            fetch('edit_client.php', { method: 'POST', body: fd })
-              .then(r=>r.json())
-              .then(resp=>{
-                if (resp.ok){ editModal.hide(); location.reload(); return; }
-                var body = document.getElementById('editClientModalBody');
-                body.querySelectorAll('.alert').forEach(n=>n.remove());
-                var err = document.createElement('div'); err.className='alert alert-danger'; err.textContent = resp.message || 'Update failed'; body.prepend(err);
-              })
-              .catch(()=>{
-                var body = document.getElementById('editClientModalBody'); body.innerHTML = '<div class="alert alert-danger">Update request failed.</div>';
-              });
-          });
-
-          // Inline save handler for client detail form
-          document.getElementById('save_client_inline')?.addEventListener('click', function(){
-            var f = document.getElementById('client_inline_edit_form');
-            if (!f) return;
-            var fd = new FormData(f);
-            fd.append('action','update_client');
-
-            fetch('edit_client.php', { method: 'POST', body: fd })
-              .then(r=>r.json())
-              .then(resp=>{
-                if (resp.ok){ location.reload(); return; }
-                alert(resp.message || 'Failed to save changes');
-              })
-              .catch(()=>{ alert('Update request failed'); });
-          });
-        })();
-      </script>
-    </body>
-    </html>
