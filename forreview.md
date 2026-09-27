@@ -27,3 +27,10 @@ Keep a short subject and category for routing, but label the main text area **Cl
 
 1. **Existing-client submission can be blocked by the province requirement.** Selecting a client fills the name and contact fields, but does not populate the province. The browser validation and server validation still require a province even when an existing client ID was selected. Skip new-client-only required fields for existing clients, or load the existing profile values before validation.
 2. **OFW information is inserted on every case submission.** The handler attempts to create an `ofw_information` row for each submission, including cases for existing clients and clients who are not the OFW. Save or update OFW details only when applicable, and avoid creating duplicate profile rows for each new concern.
+
+
+we need to know about the first touch and last touch for the day.
+
+I want also to determine if the case if for follow up like for issuing of cheque or verification.
+
+make it sure that also we can add private notes.
