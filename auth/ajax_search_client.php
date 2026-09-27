@@ -17,7 +17,12 @@ try {
     $digitsOnly = preg_replace('/\D+/', '', $term);
     $likeTerm = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $cleanTerm) . '%';
     $nameLike = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $cleanTerm) . '%';
-    $phoneLike = '%' . ($digitsOnly !== '' ? $digitsOnly : $cleanTerm) . '%';
+    $nameParts = [
+        'first_name' => trim($_GET['first_name'] ?? ''),
+        'middle_name' => trim($_GET['middle_name'] ?? ''),
+        'last_name' => trim($_GET['last_name'] ?? '')
+    ];
+    $hasNameParts = count(array_filter($nameParts, fn($value) => $value !== '')) > 0;
 
     $columns = $pdo->query("SHOW COLUMNS FROM clients")->fetchAll(PDO::FETCH_COLUMN);
     $hasMiddleName = in_array('middle_name', $columns, true);
@@ -27,10 +32,28 @@ try {
     $hasFirstName = in_array('first_name', $columns, true);
     $hasLastName = in_array('last_name', $columns, true);
 
+    $namePartConditions = [];
+    $namePartParams = [];
+    foreach ($nameParts as $column => $value) {
+        if ($value !== '' && in_array($column, $columns, true)) {
+            $parameter = ':match_' . $column;
+            $namePartConditions[] = "c.`{$column}` LIKE {$parameter}";
+            $namePartParams[$parameter] = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value) . '%';
+        }
+    }
+
     $fullNameExpression = "TRIM(CONCAT_WS(' ', " .
         ($hasFirstName ? 'c.first_name' : "''") . ", " .
         ($hasMiddleName ? 'c.middle_name' : "''") . ", " .
         ($hasLastName ? 'c.last_name' : "''") . "))";
+
+    $nameSearchCondition = $hasNameParts
+        ? (!empty($namePartConditions) ? '(' . implode(' AND ', $namePartConditions) . ')' : '0 = 1')
+        : "{$fullNameExpression} LIKE :name_like";
+    $phoneSearchCondition = $hasContactNo && $digitsOnly !== ''
+        ? "REPLACE(REPLACE(REPLACE(REPLACE(c.contact_no, ' ', ''), '-', ''), '(', ''), ')', '') LIKE :phone_like"
+        : '0 = 1';
+    $emailSearchCondition = $hasEmail && !$hasNameParts ? 'c.email LIKE :email_like' : '0 = 1';
 
     $sql = "
         SELECT
@@ -50,16 +73,16 @@ try {
         FROM clients c
         LEFT JOIN ofw_information o ON o.client_id = c.id
         WHERE (
-            " . ($hasContactNo ? "REPLACE(REPLACE(REPLACE(REPLACE(c.contact_no, ' ', ''), '-', ''), '(', ''), ')', '') LIKE :phone_like" : "0 = 1") . "
-            OR " . ($hasFirstName || $hasLastName ? "{$fullNameExpression} LIKE :name_like" : "0 = 1") . "
-            OR " . ($hasEmail ? "c.email LIKE :email_like" : "0 = 1") . "
+            {$phoneSearchCondition}
+            OR {$nameSearchCondition}
+            OR {$emailSearchCondition}
             OR CAST(c.id AS CHAR) = :id_exact
         )
         ORDER BY
             CASE
-                WHEN " . ($hasContactNo ? "REPLACE(REPLACE(REPLACE(REPLACE(c.contact_no, ' ', ''), '-', ''), '(', ''), ')', '') = :phone_exact" : "0") . " THEN 1
+                WHEN " . ($hasContactNo && $digitsOnly !== '' ? "REPLACE(REPLACE(REPLACE(REPLACE(c.contact_no, ' ', ''), '-', ''), '(', ''), ')', '') = :phone_exact" : "0") . " THEN 1
                 WHEN {$fullNameExpression} = :name_exact THEN 2
-                WHEN " . ($hasContactNo ? "REPLACE(REPLACE(REPLACE(REPLACE(c.contact_no, ' ', ''), '-', ''), '(', ''), ')', '') LIKE :phone_prefix" : "0") . " THEN 3
+                WHEN " . ($hasContactNo && $digitsOnly !== '' ? "REPLACE(REPLACE(REPLACE(REPLACE(c.contact_no, ' ', ''), '-', ''), '(', ''), ')', '') LIKE :phone_prefix" : "0") . " THEN 3
                 ELSE 4
             END,
             c.id DESC
@@ -67,13 +90,22 @@ try {
     ";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->bindValue(':phone_like', '%' . preg_replace('/\D+/', '', $term) . '%');
-    $stmt->bindValue(':name_like', $nameLike);
-    $stmt->bindValue(':email_like', $likeTerm);
+    if ($hasContactNo && $digitsOnly !== '') {
+        $stmt->bindValue(':phone_like', '%' . $digitsOnly . '%');
+        $stmt->bindValue(':phone_exact', $digitsOnly);
+        $stmt->bindValue(':phone_prefix', $digitsOnly . '%');
+    }
+    if (!$hasNameParts) {
+        $stmt->bindValue(':name_like', $nameLike);
+        if ($hasEmail) {
+            $stmt->bindValue(':email_like', $likeTerm);
+        }
+    }
+    foreach ($namePartParams as $parameter => $value) {
+        $stmt->bindValue($parameter, $value);
+    }
     $stmt->bindValue(':id_exact', $cleanTerm);
-    $stmt->bindValue(':phone_exact', preg_replace('/\D+/', '', $term));
     $stmt->bindValue(':name_exact', $cleanTerm);
-    $stmt->bindValue(':phone_prefix', preg_replace('/\D+/', '', $term) . '%');
 
     $stmt->execute();
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);

@@ -330,25 +330,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
               <button class="crm-btn" type="button" id="btn_search"><i class="fas fa-search mr-1"></i> Search</button>
             </div>
 
-            <div id="search_results" class="mt-3" style="display: none;">
-              <h6 style="font-size:12px; font-weight:700; color:#3c5372; margin-bottom:8px;">Matching Records Found</h6>
-              <div class="table-responsive">
-                <table class="crm-table">
-                  <thead><tr><th>Full Name</th><th>Contact No.</th><th>OFW Name</th><th>Country</th><th>Active Cases</th><th>Action</th></tr></thead>
-                  <tbody id="search_results_body"></tbody>
-                </table>
-              </div>
-            </div>
-
-            <div id="client_history_panel" class="mt-3" style="display: none;">
-              <h6 style="font-size:12px; font-weight:700; color:#3c5372; margin-bottom:8px;">Selected Client History</h6>
-              <div class="table-responsive">
-                <table class="crm-table">
-                  <thead><tr><th>Client</th><th>Last Case</th><th>Status</th><th>History</th></tr></thead>
-                  <tbody id="client_history_body"></tbody>
-                </table>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -384,6 +365,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <div class="detail-row"><div class="detail-label">Town / City</div><select class="editable-form-field" name="city_code" id="city_code" data-field="city_name" disabled><option value="">-- Select Town/City --</option></select></div>
                     <div class="detail-row"><div class="detail-label">Barangay</div><select class="editable-form-field" name="barangay_code" id="barangay_code" data-field="barangay_name" disabled><option value="">-- Select Barangay --</option></select></div>
                   </div>
+                </div>
+              </div>
+              <div id="search_results" class="mt-3" style="display: none;">
+                <h6 style="font-size:12px; font-weight:700; color:#3c5372; margin-bottom:8px;">Possible Matching Clients</h6>
+                <div class="table-responsive">
+                  <table class="crm-table">
+                    <thead><tr><th>Full Name</th><th>Contact No.</th><th>OFW Name</th><th>Country</th><th>Active Cases</th><th>Action</th></tr></thead>
+                    <tbody id="search_results_body"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div id="client_history_panel" class="mt-3" style="display: none;">
+                <h6 style="font-size:12px; font-weight:700; color:#3c5372; margin-bottom:8px;">Selected Client History</h6>
+                <div class="table-responsive">
+                  <table class="crm-table">
+                    <thead><tr><th>Client</th><th>Last Case</th><th>Status</th><th>History</th></tr></thead>
+                    <tbody id="client_history_body"></tbody>
+                  </table>
                 </div>
               </div>
 
@@ -728,7 +728,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
           });
       }
 
-      function performSearch() {
+      function performSearch(nameParts = null) {
         const term = searchTerm.value.trim();
         if (term.length < 2) {
           searchResults.style.display = 'none';
@@ -739,7 +739,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         searchResultsBody.innerHTML = '<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> Searching...</td></tr>';
         searchResults.style.display = 'block';
 
-        fetch(`../auth/ajax_search_client.php?term=${encodeURIComponent(term)}`)
+        const searchUrl = new URL('../auth/ajax_search_client.php', window.location.href);
+        searchUrl.searchParams.set('term', term);
+        if (nameParts) {
+          Object.entries(nameParts).forEach(([field, value]) => {
+            if (value) searchUrl.searchParams.set(field, value);
+          });
+        }
+
+        fetch(searchUrl.toString())
           .then(res => res.json())
           .then(data => {
             searchResultsBody.innerHTML = '';
@@ -787,6 +795,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
           clearTimeout(liveSearchTimeout);
           performSearch();
         }
+      });
+
+      const nameInputs = ['first_name', 'middle_name', 'last_name']
+        .map(id => document.getElementById(id));
+      nameInputs.forEach(input => {
+        input.addEventListener('input', function () {
+          clearTimeout(liveSearchTimeout);
+          const nameParts = {
+            first_name: document.getElementById('first_name').value.trim(),
+            middle_name: document.getElementById('middle_name').value.trim(),
+            last_name: document.getElementById('last_name').value.trim()
+          };
+          const nameTerm = Object.values(nameParts).filter(Boolean).join(' ');
+
+          searchTerm.value = nameTerm;
+          if (nameTerm.length < 2) {
+            searchResults.style.display = 'none';
+            searchResultsBody.innerHTML = '';
+            return;
+          }
+
+          liveSearchTimeout = setTimeout(() => performSearch(nameParts), 300);
+        });
       });
 
       document.addEventListener('click', function (e) {
