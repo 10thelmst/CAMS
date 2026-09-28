@@ -34,3 +34,6 @@ we need to know about the first touch and last touch for the day.
 I want also to determine if the case if for follow up like for issuing of cheque or verification.
 
 make it sure that also we can add private notes.
+
+
+IS OFW AND IS BENEFECIARY
